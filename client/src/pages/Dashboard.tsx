@@ -362,6 +362,8 @@ export const Dashboard: React.FC = () => {
               id="subGoal"
               label="Sub Goal Bar"
               layout={layout.subGoal}
+              defaultWidth={380}
+              defaultHeight={100}
               isEditable={isEditMode}
               onLayoutChange={(newLayout) => handleLayoutChange('subGoal', newLayout)}
             >
@@ -373,6 +375,8 @@ export const Dashboard: React.FC = () => {
               id="subAlert"
               label="Sub Alert Popup"
               layout={layout.subAlert}
+              defaultWidth={520}
+              defaultHeight={260}
               isEditable={isEditMode}
               onLayoutChange={(newLayout) => handleLayoutChange('subAlert', newLayout)}
             >

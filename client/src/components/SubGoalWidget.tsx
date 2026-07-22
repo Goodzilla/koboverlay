@@ -19,7 +19,7 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
   return (
     <div
       style={{
-        display: 'inline-flex',
+        display: 'flex',
         flexDirection: 'column',
         gap: '8px',
         padding: '14px 20px',
@@ -28,7 +28,8 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
         border: `1px solid ${primaryColor}60`,
         backdropFilter: 'blur(16px)',
         boxShadow: `0 8px 24px rgba(0, 0, 0, 0.4)`,
-        minWidth: '320px',
+        width: '100%',
+        boxSizing: 'border-box',
       }}
     >
       {/* Header Info */}

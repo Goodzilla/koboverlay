@@ -135,6 +135,8 @@ export const Overlay: React.FC = () => {
         id="subGoal"
         label="Sub Goal"
         layout={layout.subGoal}
+        defaultWidth={380}
+        defaultHeight={100}
         isEditable={false}
         onLayoutChange={() => {}}
       >
@@ -151,6 +153,8 @@ export const Overlay: React.FC = () => {
         id="subAlert"
         label="Sub Alert"
         layout={layout.subAlert}
+        defaultWidth={520}
+        defaultHeight={260}
         isEditable={false}
         onLayoutChange={() => {}}
       >
