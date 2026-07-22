@@ -1,22 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Tv, Sparkles, ShieldCheck, Zap, ArrowRight, Layers, CheckCircle } from 'lucide-react';
+import { Tv, Sparkles, ShieldCheck, Zap, ArrowRight, Layers, LogIn, X, CheckCircle } from 'lucide-react';
 
 export const Landing: React.FC = () => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
-  const [existingToken, setExistingToken] = useState<string | null>(null);
+  const [activeToken, setActiveToken] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('koboverlay_active_token');
     if (saved) {
-      setExistingToken(saved);
+      setActiveToken(saved);
     }
   }, []);
 
   const handleConnect = (e: React.FormEvent) => {
     e.preventDefault();
-    const tokenToUse = tokenInput.trim() || existingToken || 'demo-streamer-token';
+    const tokenToUse = tokenInput.trim() || activeToken || 'demo-streamer-token';
     localStorage.setItem('koboverlay_active_token', tokenToUse);
     window.location.href = `/studio?token=${encodeURIComponent(tokenToUse)}`;
+  };
+
+  const handleOpenLogin = () => {
+    if (activeToken) {
+      window.location.href = `/studio?token=${encodeURIComponent(activeToken)}`;
+    } else {
+      setIsLoginModalOpen(true);
+    }
   };
 
   return (
@@ -53,24 +62,16 @@ export const Landing: React.FC = () => {
           </span>
         </div>
 
-        {/* Header Action Button (Single context-aware button) */}
-        {existingToken ? (
-          <a
-            href={`/studio?token=${encodeURIComponent(existingToken)}`}
-            className="studio-btn studio-btn-primary"
-            style={{ textDecoration: 'none' }}
-          >
-            Go to My Studio <ArrowRight size={14} />
-          </a>
-        ) : (
-          <span style={{ fontSize: '0.85rem', color: '#a1a1aa' }}>Open-Source Overlay Engine</span>
-        )}
+        {/* Primary Connect Button Top Right */}
+        <button className="studio-btn studio-btn-primary" onClick={handleOpenLogin} style={{ padding: '8px 18px', fontSize: '0.88rem' }}>
+          <LogIn size={15} /> {activeToken ? 'Go to My Studio' : 'Connect'}
+        </button>
       </header>
 
       {/* Main Hero Container */}
-      <main style={{ flex: 1, maxWidth: '960px', width: '100%', margin: '0 auto', padding: '60px 24px', display: 'flex', flexDirection: 'column', gap: '48px' }}>
-        {/* Hero Header */}
-        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
+      <main style={{ flex: 1, maxWidth: '960px', width: '100%', margin: '0 auto', padding: '70px 24px', display: 'flex', flexDirection: 'column', gap: '56px' }}>
+        {/* Hero Section */}
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
           <div
             style={{
               display: 'inline-flex',
@@ -88,58 +89,23 @@ export const Landing: React.FC = () => {
             <Sparkles size={12} /> Open-Source Real-time Stream Overlays
           </div>
 
-          <h1 style={{ fontSize: '2.6rem', fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.15, color: '#ffffff' }}>
+          <h1 style={{ fontSize: '2.8rem', fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.15, color: '#ffffff' }}>
             Lightweight, Customizable Overlays for Live Streamers
           </h1>
 
-          <p style={{ fontSize: '1.05rem', color: '#a1a1aa', maxWidth: '600px', lineHeight: 1.6 }}>
-            Design sub alerts, goal bars, and custom sponsor graphics in a real-time studio editor. Connect your streamer token below to get started.
+          <p style={{ fontSize: '1.05rem', color: '#a1a1aa', maxWidth: '620px', lineHeight: 1.6 }}>
+            Design sub alerts, goal bars, and custom sponsor graphics in a real-time studio editor. Share access with your moderators and load seamlessly into OBS Studio.
           </p>
-        </div>
 
-        {/* Single Primary Connection Card */}
-        <div
-          style={{
-            background: '#121215',
-            border: '1px solid #27272a',
-            borderRadius: '16px',
-            padding: '32px',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>Connect Streamer Studio</h2>
-            <p style={{ fontSize: '0.88rem', color: '#a1a1aa' }}>
-              Enter your Channel Name or Token to launch your personalized studio canvas.
-            </p>
-          </div>
-
-          <form onSubmit={handleConnect} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder="e.g. streamer-token or channel name..."
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-              className="studio-input"
-              style={{ flex: 1, minWidth: '240px', padding: '12px 16px', fontSize: '0.95rem' }}
-            />
+          <div style={{ marginTop: '10px' }}>
             <button
-              type="submit"
               className="studio-btn studio-btn-primary"
-              style={{ padding: '12px 24px', fontSize: '0.95rem', fontWeight: 700 }}
+              onClick={handleOpenLogin}
+              style={{ padding: '12px 28px', fontSize: '0.98rem', fontWeight: 700 }}
             >
-              Connect & Open Studio <ArrowRight size={16} />
+              {activeToken ? 'Go to My Studio' : 'Connect Studio'} <ArrowRight size={16} />
             </button>
-          </form>
-
-          {existingToken && (
-            <div style={{ fontSize: '0.8rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-              <CheckCircle size={14} /> Currently saved session: <strong>{existingToken}</strong>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Features Grid */}
@@ -202,6 +168,94 @@ export const Landing: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Dedicated Login / Connect Modal */}
+      {isLoginModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setIsLoginModalOpen(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              background: '#121215',
+              border: '1px solid #27272a',
+              borderRadius: '16px',
+              padding: '28px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+              color: '#ffffff',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <LogIn size={18} color="#6366f1" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Connect Studio</h3>
+              </div>
+              <button
+                onClick={() => setIsLoginModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', display: 'flex' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: '#a1a1aa', lineHeight: 1.5 }}>
+              Enter your streamer channel name or account token to open your personalized studio canvas.
+            </p>
+
+            {/* Login Form */}
+            <form onSubmit={handleConnect} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '6px' }}>
+                  Streamer Channel or Token
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. streamer-name or demo-streamer-token"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  className="studio-input"
+                  style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="studio-btn studio-btn-primary"
+                style={{ padding: '12px', fontSize: '0.92rem', fontWeight: 700, width: '100%', justifyContent: 'center' }}
+              >
+                Launch Studio Canvas <ArrowRight size={16} />
+              </button>
+            </form>
+
+            {activeToken && (
+              <div style={{ fontSize: '0.8rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
+                <CheckCircle size={14} /> Saved session token: <strong>{activeToken}</strong>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer style={{ padding: '20px', borderTop: '1px solid #27272a', textAlign: 'center', fontSize: '0.8rem', color: '#71717a' }}>
