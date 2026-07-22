@@ -230,14 +230,14 @@ export const Dashboard: React.FC = () => {
     }));
   };
 
-  const handleUpdateWidgetConfig = (id: string, newConfig: Partial<WidgetInstance['config']>) => {
+  const handleUpdateWidgetConfig = (id: string, newConfig: Partial<WidgetInstance['config']>, newLabel?: string) => {
     setStudioState((prev) => ({
       ...prev,
       widgets: prev.widgets.map((w) => {
         if (w.id !== id) return w;
         return {
           ...w,
-          label: newConfig.title || w.label,
+          label: newLabel !== undefined ? newLabel : newConfig.title || w.label,
           config: { ...w.config, ...newConfig },
         };
       }),
@@ -324,7 +324,7 @@ export const Dashboard: React.FC = () => {
                 gap: '6px',
               }}
             >
-              <Layers size={14} /> Layers & Properties
+              <Layers size={14} /> Widgets & Inspector
             </button>
 
             <button
@@ -367,7 +367,7 @@ export const Dashboard: React.FC = () => {
 
                 <div style={{ borderTop: '1px solid #27272a', paddingTop: '16px' }}>
                   <button className="studio-btn" onClick={handleResetAllLayouts} style={{ width: '100%' }}>
-                    <RotateCcw size={14} /> Reset Studio Layout
+                    <RotateCcw size={14} /> Reset Widget Positions
                   </button>
                 </div>
               </div>

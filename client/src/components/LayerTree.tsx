@@ -12,6 +12,8 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
+  Upload,
+  Edit2,
 } from 'lucide-react';
 import { WidgetLayout } from './DraggableWidget';
 
@@ -30,7 +32,7 @@ export interface WidgetInstance {
   };
 }
 
-interface LayerTreeProps {
+interface WidgetTreeProps {
   widgets: WidgetInstance[];
   selectedWidgetId: string | null;
   onSelectWidget: (id: string) => void;
@@ -38,11 +40,11 @@ interface LayerTreeProps {
   onDuplicateWidget: (id: string) => void;
   onDeleteWidget: (id: string) => void;
   onResetWidgetSize: (id: string) => void;
-  onUpdateWidgetConfig: (id: string, newConfig: Partial<WidgetInstance['config']>) => void;
+  onUpdateWidgetConfig: (id: string, newConfig: Partial<WidgetInstance['config']>, newLabel?: string) => void;
   onOpenAddModal: () => void;
 }
 
-export const LayerTree: React.FC<LayerTreeProps> = ({
+export const LayerTree: React.FC<WidgetTreeProps> = ({
   widgets,
   selectedWidgetId,
   onSelectWidget,
@@ -66,13 +68,25 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
     return <ImageIcon size={14} color="#10b981" />;
   };
 
+  const handleFileUpload = (widgetId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Url = event.target?.result as string;
+        onUpdateWidgetConfig(widgetId, { imageUrl: base64Url });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* Sidebar Header & Add Widget Button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#a1a1aa', textTransform: 'uppercase' }}>
           <Layers size={14} color="#6366f1" />
-          <span>Canvas Layers ({widgets.length})</span>
+          <span>Canvas Widgets ({widgets.length})</span>
         </div>
 
         <button className="studio-btn studio-btn-primary" onClick={onOpenAddModal} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
@@ -80,7 +94,7 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
         </button>
       </div>
 
-      {/* Accordion Layer List */}
+      {/* Accordion Widget List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {widgets.map((widget) => {
           const isSelected = selectedWidgetId === widget.id;
@@ -133,7 +147,7 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
                       padding: '2px',
                       display: 'flex',
                     }}
-                    title={isVisible ? 'Hide Layer' : 'Show Layer'}
+                    title={isVisible ? 'Hide Widget' : 'Show Widget'}
                   >
                     {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
                   </button>
@@ -145,7 +159,7 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
                 </div>
               </div>
 
-              {/* Accordion Body (Per-Widget Properties Inspector & Quick Actions) */}
+              {/* Accordion Body (Per-Widget Inspector & Actions) */}
               {isExpanded && (
                 <div
                   style={{
@@ -158,7 +172,7 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* Action Bar (Duplicate, Delete, Reset) */}
+                  {/* Action Bar (Duplicate, Reset Size, Delete) */}
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
                       className="studio-btn"
@@ -172,7 +186,7 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
                       className="studio-btn"
                       onClick={() => onResetWidgetSize(widget.id)}
                       style={{ flex: 1, padding: '4px 6px', fontSize: '0.75rem' }}
-                      title="Reset Widget Size to Default PX"
+                      title="Reset Size to Default PX"
                     >
                       <RotateCcw size={12} /> Reset Size
                     </button>
@@ -188,35 +202,57 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
 
                   {/* Form Controls by Widget Type */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* Common Title/Label Input */}
+                    {/* Rename Widget Input */}
                     <div>
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                        Title / Label
+                        Widget Name
                       </label>
-                      <input
-                        type="text"
-                        value={widget.config.title || widget.label}
-                        onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value })}
-                        className="studio-input"
-                      />
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={widget.label}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value }, e.target.value)}
+                          className="studio-input"
+                          placeholder="Widget Name"
+                        />
+                      </div>
                     </div>
 
-                    {/* Custom Image / GIF / Badge URL */}
+                    {/* Image / GIF Upload & URL for Image and Alert Widgets */}
                     <div>
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                        Custom Image / GIF URL
+                        Image / GIF (Upload or Link)
                       </label>
-                      <input
-                        type="text"
-                        placeholder="https://example.com/logo.png"
-                        value={widget.config.imageUrl || ''}
-                        onChange={(e) => onUpdateWidgetConfig(widget.id, { imageUrl: e.target.value })}
-                        className="studio-input"
-                        style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}
-                      />
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="https://example.com/image.png"
+                          value={widget.config.imageUrl || ''}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { imageUrl: e.target.value })}
+                          className="studio-input"
+                          style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', flex: 1 }}
+                        />
+
+                        {/* File Upload Trigger */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id={`file_upload_${widget.id}`}
+                          onChange={(e) => handleFileUpload(widget.id, e)}
+                          style={{ display: 'none' }}
+                        />
+                        <label
+                          htmlFor={`file_upload_${widget.id}`}
+                          className="studio-btn studio-btn-primary"
+                          style={{ padding: '6px 10px', fontSize: '0.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          title="Upload Image from your computer"
+                        >
+                          <Upload size={12} /> Upload
+                        </label>
+                      </div>
                     </div>
 
-                    {/* Accent Color Picker (for subGoal & subAlert) */}
+                    {/* Accent Color Picker */}
                     {widget.type !== 'customImage' && (
                       <div>
                         <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
@@ -245,7 +281,7 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Current
+                            Current Subs
                           </label>
                           <input
                             type="number"
@@ -256,7 +292,7 @@ export const LayerTree: React.FC<LayerTreeProps> = ({
                         </div>
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Target
+                            Target Subs
                           </label>
                           <input
                             type="number"
