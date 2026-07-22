@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
+import { createOverlaySocket } from '../utils/socket';
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
 
@@ -28,9 +28,7 @@ export const Overlay: React.FC = () => {
       setToken(urlToken);
     }
 
-    const socket = io(window.location.origin, {
-      transports: ['websocket', 'polling'],
-    });
+    const socket = createOverlaySocket();
 
     socket.on('connect', () => {
       console.log(`🎬 OBS Overlay Socket connected to server`);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { createOverlaySocket } from '../utils/socket';
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
 import {
@@ -34,9 +35,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Initialize Socket.io connection to backend server
-    const newSocket = io(window.location.origin, {
-      transports: ['websocket', 'polling'],
-    });
+    const newSocket = createOverlaySocket();
 
     newSocket.on('connect', () => {
       setConnected(true);
