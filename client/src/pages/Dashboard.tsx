@@ -512,6 +512,10 @@ export const Dashboard: React.FC = () => {
                       fontSize={widget.config.fontSize}
                       borderRadius={widget.config.borderRadius}
                       imageUrl={widget.config.imageUrl}
+                      showProgressBar={widget.config.showProgressBar}
+                      progressBarBgColor={widget.config.progressBarBgColor}
+                      progressBarHeight={widget.config.progressBarHeight}
+                      showPercentage={widget.config.showPercentage}
                     />
                   )}
 

@@ -10,6 +10,10 @@ interface SubGoalWidgetProps {
   fontSize?: number;
   borderRadius?: number;
   imageUrl?: string;
+  showProgressBar?: boolean;
+  progressBarBgColor?: string;
+  progressBarHeight?: number;
+  showPercentage?: boolean;
 }
 
 export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
@@ -22,6 +26,10 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
   fontSize = 14,
   borderRadius = 10,
   imageUrl,
+  showProgressBar = true,
+  progressBarBgColor = 'rgba(0, 0, 0, 0.5)',
+  progressBarHeight = 10,
+  showPercentage = true,
 }) => {
   const percentage = Math.min(100, Math.round((currentSubs / Math.max(1, targetSubs)) * 100));
 
@@ -31,7 +39,7 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        gap: '6px',
+        gap: '8px',
         padding: '10px 14px',
         borderRadius: `${borderRadius}px`,
         background: backgroundColor,
@@ -44,7 +52,7 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
       }}
     >
       {/* Header Info */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {imageUrl && (
             <img src={imageUrl} alt="Icon" style={{ width: `${fontSize + 4}px`, height: `${fontSize + 4}px`, objectFit: 'contain' }} />
@@ -52,33 +60,35 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
           <span style={{ fontWeight: 700, fontSize: `${fontSize}px`, color: textColor }}>{title}</span>
         </div>
 
-        <div style={{ fontSize: `${Math.max(11, fontSize - 2)}px`, fontWeight: 700, color: textColor, opacity: 0.9, fontFamily: 'var(--font-mono)' }}>
-          <span>{currentSubs}</span> / <span>{targetSubs}</span> ({percentage}%)
+        <div style={{ fontSize: `${Math.max(11, fontSize - 2)}px`, fontWeight: 700, color: textColor, opacity: 0.9, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+          <span>{currentSubs}</span> / <span>{targetSubs}</span> {showPercentage && `(${percentage}%)`}
         </div>
       </div>
 
-      {/* Progress Bar Track */}
-      <div
-        style={{
-          width: '100%',
-          height: '10px',
-          borderRadius: `${Math.max(2, borderRadius - 4)}px`,
-          background: 'rgba(0, 0, 0, 0.5)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
+      {/* Customizable Progress Bar Track */}
+      {showProgressBar && (
         <div
           style={{
-            width: `${percentage}%`,
-            height: '100%',
+            width: '100%',
+            height: `${progressBarHeight}px`,
             borderRadius: `${Math.max(2, borderRadius - 4)}px`,
-            background: primaryColor,
-            transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            background: progressBarBgColor,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            overflow: 'hidden',
+            position: 'relative',
           }}
-        />
-      </div>
+        >
+          <div
+            style={{
+              width: `${percentage}%`,
+              height: '100%',
+              borderRadius: `${Math.max(2, borderRadius - 4)}px`,
+              background: primaryColor,
+              transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

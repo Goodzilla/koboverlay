@@ -5,7 +5,6 @@ import {
   EyeOff,
   Trash2,
   Copy,
-  RotateCcw,
   Target,
   Sparkles,
   Image as ImageIcon,
@@ -34,6 +33,10 @@ export interface WidgetInstance {
     targetSubs?: number;
     alertDuration?: number;
     customTextTemplate?: string;
+    showProgressBar?: boolean;
+    progressBarBgColor?: string;
+    progressBarHeight?: number;
+    showPercentage?: boolean;
   };
 }
 
@@ -44,7 +47,7 @@ interface WidgetTreeProps {
   onToggleVisibility: (id: string) => void;
   onDuplicateWidget: (id: string) => void;
   onDeleteWidget: (id: string) => void;
-  onResetWidgetSize: (id: string) => void;
+  onResetWidgetSize?: (id: string) => void;
   onUpdateWidgetConfig: (id: string, newConfig: Partial<WidgetInstance['config']>, newLabel?: string) => void;
   onOpenAddModal: () => void;
 }
@@ -56,7 +59,6 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
   onToggleVisibility,
   onDuplicateWidget,
   onDeleteWidget,
-  onResetWidgetSize,
   onUpdateWidgetConfig,
   onOpenAddModal,
 }) => {
@@ -322,6 +324,81 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                           onChange={(e) => onUpdateWidgetConfig(widget.id, { imageSize: Number(e.target.value) })}
                           style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
                         />
+                      </div>
+                    )}
+
+                    {/* Sub Goal Specific Progress Bar Options */}
+                    {widget.type === 'subGoal' && (
+                      <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818cf8', borderBottom: '1px solid #27272a', paddingBottom: '4px' }}>
+                          Progress Bar Customization
+                        </div>
+
+                        {/* Show/Hide Progress Bar & Percentage Toggles */}
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={widget.config.showProgressBar !== false}
+                              onChange={(e) => onUpdateWidgetConfig(widget.id, { showProgressBar: e.target.checked })}
+                              style={{ accentColor: '#6366f1' }}
+                            />
+                            Show Progress Bar
+                          </label>
+
+                          <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={widget.config.showPercentage !== false}
+                              onChange={(e) => onUpdateWidgetConfig(widget.id, { showPercentage: e.target.checked })}
+                              style={{ accentColor: '#6366f1' }}
+                            />
+                            Show (%) Text
+                          </label>
+                        </div>
+
+                        {/* Progress Bar Track Color & Height Controls */}
+                        {widget.config.showProgressBar !== false && (
+                          <>
+                            <div>
+                              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                                Progress Bar Track Color
+                              </label>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                  type="color"
+                                  value={widget.config.progressBarBgColor || '#000000'}
+                                  onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
+                                  style={{ width: '28px', height: '26px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={widget.config.progressBarBgColor || 'rgba(0,0,0,0.5)'}
+                                  onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
+                                  className="studio-input"
+                                  style={{ fontSize: '0.75rem' }}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Progress Bar Height</label>
+                                <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
+                                  {widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}px
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="4"
+                                max="30"
+                                value={widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}
+                                onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarHeight: Number(e.target.value) })}
+                                style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
+                              />
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
 
