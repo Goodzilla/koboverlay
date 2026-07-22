@@ -324,8 +324,8 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                         </div>
                         <input
                           type="range"
-                          min="30"
-                          max="200"
+                          min="10"
+                          max="600"
                           value={widget.config.imageSize !== undefined ? widget.config.imageSize : 80}
                           onChange={(e) => onUpdateWidgetConfig(widget.id, { imageSize: Number(e.target.value) })}
                           style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}

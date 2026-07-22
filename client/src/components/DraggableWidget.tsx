@@ -47,6 +47,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
   const currentLayoutRef = useRef<WidgetLayout>(layout);
+  const isManuallyResizedRef = useRef<boolean>(false);
   const startDragRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number } | null>(null);
   const startResizeRef = useRef<{ mouseX: number; mouseY: number; startW: number; startH: number } | null>(null);
 
@@ -58,7 +59,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     }
   }, [layout, isDragging, isResizing]);
 
-  // Measure natural content size to enforce minimum dragbox size
+  // Measure natural content size: auto-fit dragbox when config changes unless manually corner-resized
   useEffect(() => {
     if (innerContentRef.current) {
       const scrollH = innerContentRef.current.scrollHeight;
@@ -69,12 +70,23 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
 
       setMinSize({ width: baseW, height: baseH });
 
-      // If current layout is smaller than content natural size, update layout height/width to encapsulate it
-      if (currentLayout.width < baseW || currentLayout.height < baseH) {
+      // If dragbox has NOT been manually resized by dragging the corner handle,
+      // dynamically resize the dragbox width & height to tightly fit the updated content!
+      if (!isManuallyResizedRef.current) {
         const updated = {
-          ...currentLayout,
-          width: Math.max(currentLayout.width, baseW),
-          height: Math.max(currentLayout.height, baseH),
+          ...currentLayoutRef.current,
+          width: baseW,
+          height: baseH,
+        };
+        setCurrentLayout(updated);
+        currentLayoutRef.current = updated;
+        onLayoutChange(updated);
+      } else if (currentLayout.width < baseW || currentLayout.height < baseH) {
+        // Even if manually resized, ensure it never clips below the content natural size
+        const updated = {
+          ...currentLayoutRef.current,
+          width: Math.max(currentLayoutRef.current.width, baseW),
+          height: Math.max(currentLayoutRef.current.height, baseH),
         };
         setCurrentLayout(updated);
         currentLayoutRef.current = updated;
@@ -144,6 +156,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     e.stopPropagation();
 
     setIsResizing(true);
+    isManuallyResizedRef.current = true;
     startResizeRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
@@ -194,6 +207,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
 
   const handleResetSize = (e: React.MouseEvent) => {
     e.stopPropagation();
+    isManuallyResizedRef.current = false;
     const updated = {
       ...currentLayout,
       width: minSize.width,
@@ -262,7 +276,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
               className="reset-size-btn"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={handleResetSize}
-              title="Reset Widget Size to Content Min PX"
+              title="Reset Widget Size to Content Natural PX"
             >
               <RotateCcw size={13} />
             </button>
