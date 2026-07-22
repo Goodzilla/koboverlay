@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Move, Maximize2 } from 'lucide-react';
+import { Move, Maximize2, EyeOff, VolumeX } from 'lucide-react';
 
 export interface WidgetLayout {
   x: number;      // Position X in PX (0 to 1920)
@@ -7,6 +7,7 @@ export interface WidgetLayout {
   width: number;  // Width in PX
   height: number; // Height in PX
   visible?: boolean;
+  muted?: boolean;
 }
 
 interface DraggableWidgetProps {
@@ -18,6 +19,7 @@ interface DraggableWidgetProps {
   isEditable: boolean;
   isSelected?: boolean;
   gridSnap?: boolean;
+  hasSound?: boolean;
   onSelect?: () => void;
   onLayoutChange: (newLayout: WidgetLayout) => void;
   onScaleChange?: (scaleRatio: number) => void;
@@ -33,6 +35,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   isEditable,
   isSelected = false,
   gridSnap = false,
+  hasSound = false,
   onSelect,
   onLayoutChange,
   onScaleChange,
@@ -250,6 +253,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           position: 'relative',
           boxSizing: 'border-box',
           overflow: 'hidden',
+          // Subtle dimming when hidden or muted in edit mode
+          opacity: isEditable && currentLayout.visible === false ? 0.35 : 1,
+          transition: 'opacity 0.2s ease',
         }}
       >
         {/* Inner Content Wrapper */}
@@ -264,32 +270,87 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           {children}
         </div>
 
-        {/* Studio Resize Corner Handle */}
-        {isEditable && (isSelected || isResizing) && (
+        {/* State Badge Overlay — shown in edit mode when hidden or muted (for widgets with sound) */}
+        {isEditable && (currentLayout.visible === false || (hasSound && currentLayout.muted === true)) && (
           <div
-            onMouseDown={handleResizeMouseDown}
             style={{
               position: 'absolute',
-              right: '-6px',
-              bottom: '-6px',
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-              border: '2px solid #ffffff',
-              cursor: 'se-resize',
+              top: '6px',
+              right: '6px',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 10px rgba(6, 182, 212, 1)',
-              zIndex: 150,
+              gap: '4px',
+              pointerEvents: 'none',
             }}
-            title="Click and drag to resize width & height freely"
           >
-            <Maximize2 size={10} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
+            {currentLayout.visible === false && (
+              <div
+                style={{
+                  background: 'rgba(0,0,0,0.7)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: '4px',
+                  padding: '3px 5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  color: '#a1a1aa',
+                  border: '1px solid rgba(161,161,170,0.3)',
+                }}
+              >
+                <EyeOff size={9} />
+                <span>HIDDEN</span>
+              </div>
+            )}
+            {hasSound && currentLayout.muted === true && (
+              <div
+                style={{
+                  background: 'rgba(0,0,0,0.7)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: '4px',
+                  padding: '3px 5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  color: '#f59e0b',
+                  border: '1px solid rgba(245,158,11,0.35)',
+                }}
+              >
+                <VolumeX size={9} />
+                <span>MUTED</span>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Studio Resize Corner Handle — must be outside the overflow:hidden container */}
+      {isEditable && (isSelected || isResizing) && (
+        <div
+          onMouseDown={handleResizeMouseDown}
+          style={{
+            position: 'absolute',
+            right: '-6px',
+            bottom: '-6px',
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+            border: '2px solid #ffffff',
+            cursor: 'se-resize',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 10px rgba(6, 182, 212, 1)',
+            zIndex: 150,
+          }}
+          title="Click and drag to resize width & height freely"
+        >
+          <Maximize2 size={10} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
+        </div>
+      )}
     </div>
   );
 };

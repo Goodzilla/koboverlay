@@ -242,6 +242,22 @@ export const Dashboard: React.FC = () => {
     }));
   };
 
+  const handleToggleMute = (id: string) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => {
+        if (w.id !== id) return w;
+        return {
+          ...w,
+          layout: {
+            ...w.layout,
+            muted: w.layout.muted === true ? false : true,
+          },
+        };
+      }),
+    }));
+  };
+
   const handleLayoutChange = (id: string, newLayout: WidgetLayout) => {
     setStudioState((prev) => ({
       ...prev,
@@ -326,8 +342,6 @@ export const Dashboard: React.FC = () => {
     setStudioState(DEFAULT_STUDIO_STATE);
     setSelectedWidgetId('subGoal_default');
   };
-
-  // Smart Alert Matching Algorithm (Finds best matching alert widget by tier & trigger conditions)
   const matchAlertToWidget = (
     type: 'sub' | 'resub' | 'subgift' | 'bits' | 'raid',
     tier: 'Prime' | '1000' | '2000' | '3000',
@@ -506,6 +520,7 @@ export const Dashboard: React.FC = () => {
                   selectedWidgetId={selectedWidgetId}
                   onSelectWidget={(id) => setSelectedWidgetId(id)}
                   onToggleVisibility={handleToggleVisibility}
+                  onToggleMute={handleToggleMute}
                   onDuplicateWidget={handleDuplicateWidget}
                   onDeleteWidget={handleDeleteWidget}
                   onCenterWidget={handleCenterWidget}
@@ -643,6 +658,7 @@ export const Dashboard: React.FC = () => {
                   isEditable={true}
                   isSelected={selectedWidgetId === widget.id}
                   gridSnap={gridSnap}
+                  hasSound={widget.type === 'subAlert'}
                   onSelect={() => setSelectedWidgetId(widget.id)}
                   onLayoutChange={(newLayout) => handleLayoutChange(widget.id, newLayout)}
                   onScaleChange={(scaleRatio) => handleScaleWidget(widget.id, scaleRatio)}

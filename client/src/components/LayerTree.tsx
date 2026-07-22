@@ -18,6 +18,7 @@ import {
   LayoutGrid,
   Crosshair,
   Volume2,
+  VolumeX,
   Play,
   Zap,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ export interface WidgetInstance {
     imageSize?: number;
     soundUrl?: string;
     soundVolume?: number;
+    previousVolume?: number;
     primaryColor?: string;
     backgroundColor?: string;
     textColor?: string;
@@ -60,6 +62,7 @@ interface WidgetTreeProps {
   selectedWidgetId: string | null;
   onSelectWidget: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  onToggleMute: (id: string) => void;
   onDuplicateWidget: (id: string) => void;
   onDeleteWidget: (id: string) => void;
   onCenterWidget: (id: string) => void;
@@ -73,6 +76,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
   selectedWidgetId,
   onSelectWidget,
   onToggleVisibility,
+  onToggleMute,
   onDuplicateWidget,
   onDeleteWidget,
   onCenterWidget,
@@ -139,6 +143,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
           const isSelected = selectedWidgetId === widget.id;
           const isExpanded = expandedId === widget.id || isSelected;
           const isVisible = widget.layout.visible !== false;
+          const isMuted = widget.layout.muted === true;
 
           return (
             <div
@@ -171,7 +176,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {/* Eye Visibility Toggle */}
                   <button
                     onClick={(e) => {
@@ -179,26 +184,51 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       onToggleVisibility(widget.id);
                     }}
                     style={{
-                      background: 'none',
-                      border: 'none',
-                      color: isVisible ? '#a1a1aa' : '#52525b',
+                      background: isVisible ? 'none' : 'rgba(239,68,68,0.15)',
+                      border: isVisible ? 'none' : '1px solid rgba(239,68,68,0.4)',
+                      borderRadius: '4px',
+                      color: isVisible ? '#52525b' : '#ef4444',
                       cursor: 'pointer',
-                      padding: '2px',
+                      padding: '3px',
                       display: 'flex',
+                      transition: 'all 0.15s ease',
                     }}
-                    title={isVisible ? 'Hide Widget' : 'Show Widget'}
+                    title={isVisible ? 'Hide widget on overlay' : 'Show widget on overlay'}
                   >
-                    {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                    {isVisible ? <Eye size={13} /> : <EyeOff size={13} />}
                   </button>
 
+                  {/* Mute Sound Toggle — only for widgets supporting sound */}
+                  {widget.type === 'subAlert' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleMute(widget.id);
+                      }}
+                      style={{
+                        background: isMuted ? 'rgba(245,158,11,0.15)' : 'none',
+                        border: isMuted ? '1px solid rgba(245,158,11,0.4)' : 'none',
+                        borderRadius: '4px',
+                        color: isMuted ? '#f59e0b' : '#52525b',
+                        cursor: 'pointer',
+                        padding: '3px',
+                        display: 'flex',
+                        transition: 'all 0.15s ease',
+                      }}
+                      title={isMuted ? 'Unmute widget sounds' : 'Mute widget sounds'}
+                    >
+                      {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                    </button>
+                  )}
+
                   {/* Accordion Chevron Expander */}
-                  <div style={{ color: '#71717a', display: 'flex' }}>
+                  <div style={{ color: '#71717a', display: 'flex', marginLeft: '2px' }}>
                     {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </div>
                 </div>
               </div>
 
-              {/* Accordion Body (Structured Inspector with Emphasized Hierarchy) */}
+              {/* Accordion Body */}
               {isExpanded && (
                 <div
                   style={{
@@ -211,7 +241,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* Action Bar (Duplicate, Bring to Center, Delete) */}
+                  {/* Action Bar */}
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
                       className="studio-btn"
@@ -230,112 +260,24 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       <Crosshair size={12} color="#6366f1" /> Center
                     </button>
                     <button
-                      className="studio-btn"
+                      className="studio-btn studio-btn-danger"
                       onClick={() => onDeleteWidget(widget.id)}
-                      style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                      style={{ padding: '4px 8px', fontSize: '0.75rem' }}
                       title="Delete Widget"
                     >
                       <Trash2 size={12} />
                     </button>
                   </div>
 
-                  {/* SECTION 1: 📌 BASIC INFO & CONTENT */}
+                  {/* SECTION 1: WIDGET LABEL & TITLE */}
                   <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
-                      <LayoutGrid size={13} color="#6366f1" /> Content & Goal Info
+                      <LayoutGrid size={13} color="#6366f1" /> General Settings
                     </div>
 
-                    {/* Display Text (On Stream) */}
-                    {widget.type !== 'customImage' && (
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#818cf8', display: 'block', marginBottom: '4px' }}>
-                          Display Text (On Stream Content)
-                        </label>
-                        <input
-                          type="text"
-                          value={widget.config.title !== undefined ? widget.config.title : 'Monthly Sub Goal'}
-                          onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value })}
-                          className="studio-input"
-                          style={{ fontWeight: 600 }}
-                          placeholder="e.g. Monthly Sub Goal"
-                        />
-                      </div>
-                    )}
-
-                    {/* Sub Goal Current & Target Subs */}
-                    {widget.type === 'subGoal' && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                        <div>
-                          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#818cf8', display: 'block', marginBottom: '4px' }}>
-                            Current Subs
-                          </label>
-                          <input
-                            type="number"
-                            value={widget.config.currentSubs || 0}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { currentSubs: Number(e.target.value) })}
-                            className="studio-input"
-                            style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#818cf8', display: 'block', marginBottom: '4px' }}>
-                            Target Goal
-                          </label>
-                          <input
-                            type="number"
-                            value={widget.config.targetSubs || 50}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { targetSubs: Number(e.target.value) })}
-                            className="studio-input"
-                            style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Sub Alert Dynamic Text Template (Context-Aware Variables & Placeholder) */}
-                    {widget.type === 'subAlert' && (() => {
-                      const evtType = widget.config.triggerEventType || 'all';
-                      let varsText = '{username}, {amount}, {months}, {tier}';
-                      let placeholderText = '{username} subscribed for {months} months ({tier})';
-
-                      if (evtType === 'raid') {
-                        varsText = '{username}, {amount}';
-                        placeholderText = '{username} raided with {amount} viewers!';
-                      } else if (evtType === 'bits') {
-                        varsText = '{username}, {amount}';
-                        placeholderText = '{username} cheered {amount} Bits!';
-                      } else if (evtType === 'subgift') {
-                        varsText = '{username}, {amount}, {tier}';
-                        placeholderText = '{username} gifted {amount} subs ({tier})';
-                      } else if (evtType === 'resub') {
-                        varsText = '{username}, {months}, {tier}';
-                        placeholderText = '{username} subscribed for {months} months ({tier})';
-                      } else if (evtType === 'sub') {
-                        varsText = '{username}, {tier}';
-                        placeholderText = '{username} subscribed ({tier})';
-                      }
-
-                      return (
-                        <div>
-                          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', display: 'block', marginBottom: '4px' }}>
-                            Alert Text Template ({varsText})
-                          </label>
-                          <input
-                            type="text"
-                            placeholder={placeholderText}
-                            value={widget.config.customTextTemplate || ''}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { customTextTemplate: e.target.value })}
-                            className="studio-input"
-                            style={{ fontSize: '0.75rem' }}
-                          />
-                        </div>
-                      );
-                    })()}
-
-                    {/* Widget Layer Identifier */}
                     <div>
-                      <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#71717a', display: 'block', marginBottom: '4px' }}>
-                        Widget Layer Name (Sidebar & Dragbar)
+                      <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                        Layer Label (Internal Identifier)
                       </label>
                       <input
                         type="text"
@@ -343,192 +285,109 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                         onChange={(e) => onUpdateWidgetConfig(widget.id, {}, e.target.value)}
                         className="studio-input"
                         style={{ fontSize: '0.75rem' }}
-                        placeholder="e.g. Sub Goal Top Right"
                       />
                     </div>
-                  </div>
 
-                  {/* SECTION 2: ⚡ ALERT TRIGGER CONDITIONS & TIERS (For Sub Alert) */}
-                  {widget.type === 'subAlert' && (
-                    <div style={{ background: '#18181b', border: '1px solid #38bdf840', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
-                        <Zap size={13} color="#38bdf8" /> Alert Trigger Conditions & Tiers
-                      </div>
-
-                      {/* Event Type Filter */}
+                    {widget.type !== 'customImage' && (
                       <div>
                         <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                          Trigger Event Type
+                          Display Title
                         </label>
-                        <select
+                        <input
+                          type="text"
+                          value={widget.config.title || ''}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value })}
                           className="studio-input"
-                          value={widget.config.triggerEventType || 'all'}
-                          onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerEventType: e.target.value as any })}
-                          style={{ fontSize: '0.75rem', cursor: 'pointer', background: '#09090b', color: '#ffffff' }}
-                        >
-                          <option value="all">All Events (General Alert)</option>
-                          <option value="sub">Single Subscription (Sub)</option>
-                          <option value="resub">Re-Subscription (Re-Sub)</option>
-                          <option value="subgift">Gifted Subscriptions (Sub Gift)</option>
-                          <option value="bits">Twitch Bits & Cheer</option>
-                          <option value="raid">Stream Raid / Host</option>
-                        </select>
+                          style={{ fontSize: '0.75rem' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECTION 2: TRIGGER & TIER CONDITIONS (For Sub Alert) */}
+                  {widget.type === 'subAlert' && (
+                    <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
+                        <Zap size={13} color="#38bdf8" /> Event Triggers & Tier Rules
                       </div>
 
-                      {/* Min Amount (e.g. 5+ gift subs, 500+ bits, 20+ raiders) */}
-                      {(widget.config.triggerEventType === 'subgift' || widget.config.triggerEventType === 'bits' || widget.config.triggerEventType === 'raid') && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Minimum Amount Required ({widget.config.triggerEventType === 'subgift' ? 'Gifted Subs' : widget.config.triggerEventType === 'bits' ? 'Bits' : 'Viewers'})
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="e.g. 5"
-                            value={widget.config.triggerMinAmount || 1}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerMinAmount: Number(e.target.value) })}
-                            className="studio-input"
-                            style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Min Months (For Re-subs) */}
-                      {widget.config.triggerEventType === 'resub' && (
-                        <div>
-                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Minimum Subscription Months (e.g. 6 or 12 months)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="e.g. 12"
-                            value={widget.config.triggerMinMonths || 1}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerMinMonths: Number(e.target.value) })}
-                            className="studio-input"
-                            style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Tier Filter */}
-                      {(widget.config.triggerEventType === 'sub' || widget.config.triggerEventType === 'resub' || widget.config.triggerEventType === 'subgift' || widget.config.triggerEventType === 'all') && (
-                        <div>
-                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Subscription Tier Filter
+                            Event Type Filter
                           </label>
                           <select
+                            value={widget.config.triggerEventType || 'all'}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerEventType: e.target.value as any })}
                             className="studio-input"
-                            value={widget.config.triggerTier || 'all'}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerTier: e.target.value as any })}
-                            style={{ fontSize: '0.75rem', cursor: 'pointer', background: '#09090b', color: '#ffffff' }}
+                            style={{ fontSize: '0.75rem' }}
                           >
-                            <option value="all">All Tiers</option>
-                            <option value="Prime">Prime Gaming Only</option>
-                            <option value="1000">Tier 1 Only ($4.99)</option>
-                            <option value="2000">Tier 2 Only ($9.99)</option>
-                            <option value="3000">Tier 3 Only ($24.99)</option>
+                            <option value="all">All Events</option>
+                            <option value="sub">Single Subs</option>
+                            <option value="resub">Resubs</option>
+                            <option value="subgift">Gifted Subs</option>
+                            <option value="bits">Bits</option>
+                            <option value="raid">Raids</option>
                           </select>
                         </div>
-                      )}
+
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                            Sub Tier Filter
+                          </label>
+                          <select
+                            value={widget.config.triggerTier || 'all'}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerTier: e.target.value as any })}
+                            className="studio-input"
+                            style={{ fontSize: '0.75rem' }}
+                          >
+                            <option value="all">All Tiers</option>
+                            <option value="1000">Tier 1 Only</option>
+                            <option value="2000">Tier 2 Only</option>
+                            <option value="3000">Tier 3 Only</option>
+                            <option value="Prime">Prime Only</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {/* SECTION 3: 📊 PROGRESS BAR STYLING (For Sub Goal) */}
+                  {/* SECTION 3: SUB GOAL DATA */}
                   {widget.type === 'subGoal' && (
                     <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
-                        <BarChart3 size={13} color="#6366f1" /> Progress Bar Styling
+                        <BarChart3 size={13} color="#6366f1" /> Goal Counter & Progress Bar
                       </div>
 
-                      {/* Toggles */}
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                            Current Sub Count
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={widget.config.showProgressBar !== false}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { showProgressBar: e.target.checked })}
-                            style={{ accentColor: '#6366f1' }}
+                            type="number"
+                            min="0"
+                            value={widget.config.currentSubs !== undefined ? widget.config.currentSubs : 0}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { currentSubs: Number(e.target.value) })}
+                            className="studio-input"
+                            style={{ fontSize: '0.75rem' }}
                           />
-                          Show Bar
-                        </label>
+                        </div>
 
-                        <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                            Target Goal
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={widget.config.showPercentage !== false}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { showPercentage: e.target.checked })}
-                            style={{ accentColor: '#6366f1' }}
+                            type="number"
+                            min="1"
+                            value={widget.config.targetSubs !== undefined ? widget.config.targetSubs : 50}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { targetSubs: Number(e.target.value) })}
+                            className="studio-input"
+                            style={{ fontSize: '0.75rem' }}
                           />
-                          Show (%) Text
-                        </label>
+                        </div>
                       </div>
-
-                      {widget.config.showProgressBar !== false && (
-                        <>
-                          {/* Progress Fill Color (Primary Foreground Fill) */}
-                          <div>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                              Bar Fill Color (Foreground)
-                            </label>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <input
-                                type="color"
-                                value={widget.config.primaryColor || '#6366f1'}
-                                onChange={(e) => onUpdateWidgetConfig(widget.id, { primaryColor: e.target.value })}
-                                style={{ width: '32px', height: '28px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
-                              />
-                              <input
-                                type="text"
-                                value={widget.config.primaryColor || '#6366f1'}
-                                onChange={(e) => onUpdateWidgetConfig(widget.id, { primaryColor: e.target.value })}
-                                className="studio-input"
-                                style={{ fontSize: '0.75rem', flex: 1 }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Progress Track Color (Unfilled Background Track) */}
-                          <div>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                              Bar Track Color (Background Track)
-                            </label>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <input
-                                type="color"
-                                value={widget.config.progressBarBgColor === 'rgba(0, 0, 0, 0.5)' ? '#000000' : widget.config.progressBarBgColor || '#000000'}
-                                onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
-                                style={{ width: '32px', height: '28px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
-                              />
-                              <input
-                                type="text"
-                                value={widget.config.progressBarBgColor || 'rgba(0, 0, 0, 0.5)'}
-                                onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
-                                className="studio-input"
-                                style={{ fontSize: '0.75rem', flex: 1 }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Bar Height */}
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Progress Bar Height</label>
-                              <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
-                                {widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}px
-                              </span>
-                            </div>
-                            <input
-                              type="range"
-                              min="4"
-                              max="30"
-                              value={widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}
-                              onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarHeight: Number(e.target.value) })}
-                              style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
-                            />
-                          </div>
-                        </>
-                      )}
                     </div>
                   )}
 
@@ -572,36 +431,52 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                         </div>
                       </div>
 
-                      {/* Sound Volume Slider & Test Button */}
-                      {widget.config.soundUrl && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      {/* Sound Volume Control */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Sound Volume</label>
-                              <span style={{ fontSize: '0.7rem', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
-                                {widget.config.soundVolume !== undefined ? widget.config.soundVolume : 80}%
-                              </span>
+                              {isMuted && (
+                                <span style={{ fontSize: '0.62rem', color: '#f59e0b', fontWeight: 700, background: 'rgba(245, 158, 11, 0.15)', padding: '1px 5px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                                  MUTED (0%)
+                                </span>
+                              )}
                             </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={widget.config.soundVolume !== undefined ? widget.config.soundVolume : 80}
-                              onChange={(e) => onUpdateWidgetConfig(widget.id, { soundVolume: Number(e.target.value) })}
-                              style={{ width: '100%', accentColor: '#38bdf8', cursor: 'pointer' }}
-                            />
+                            <span style={{ fontSize: '0.7rem', color: isMuted ? '#f59e0b' : '#38bdf8', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                              {isMuted ? 0 : (widget.config.soundVolume !== undefined ? widget.config.soundVolume : 80)}%
+                            </span>
                           </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={isMuted ? 0 : (widget.config.soundVolume !== undefined ? widget.config.soundVolume : 80)}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              if (val === 0) {
+                                onUpdateWidgetConfig(widget.id, { soundVolume: 0 });
+                                if (!isMuted) onToggleMute(widget.id);
+                              } else {
+                                onUpdateWidgetConfig(widget.id, { soundVolume: val, previousVolume: val });
+                                if (isMuted) onToggleMute(widget.id);
+                              }
+                            }}
+                            style={{ width: '100%', accentColor: isMuted ? '#f59e0b' : '#38bdf8', cursor: 'pointer' }}
+                          />
+                        </div>
 
+                        {widget.config.soundUrl && (
                           <button
                             type="button"
                             className="studio-btn"
-                            onClick={() => handlePlaySoundPreview(widget.config.soundUrl, widget.config.soundVolume)}
+                            onClick={() => handlePlaySoundPreview(widget.config.soundUrl, isMuted ? 0 : widget.config.soundVolume)}
                             style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)' }}
                           >
                             <Play size={12} /> Test Sound Preview
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   )}
 

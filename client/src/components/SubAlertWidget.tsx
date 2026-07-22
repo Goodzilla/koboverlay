@@ -24,17 +24,18 @@ export interface AlertData {
 interface SubAlertWidgetProps {
   alert: AlertData | null;
   onAnimationComplete?: () => void;
+  muted?: boolean;
 }
 
-export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimationComplete }) => {
+export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimationComplete, muted = false }) => {
   const [animState, setAnimState] = useState<'enter' | 'exit' | 'hidden'>('hidden');
 
   useEffect(() => {
     if (alert) {
       setAnimState('enter');
 
-      // Play alert sound if configured
-      if (alert.soundUrl) {
+      // Play alert sound if configured and not muted
+      if (alert.soundUrl && !muted) {
         try {
           const audio = new Audio(alert.soundUrl);
           audio.volume = (alert.soundVolume !== undefined ? alert.soundVolume : 80) / 100;

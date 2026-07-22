@@ -80,7 +80,11 @@ export const Overlay: React.FC = () => {
     // Listen for incoming alerts from server
     socket.on('new-alert', (alert: AlertData) => {
       console.log('🔔 New Overlay Alert Received:', alert);
-      playAlertAudio();
+      // Only play default chime if there's at least one unmuted subAlert widget
+      const hasUnmutedAlertWidget = widgets.some(
+        (w) => w.type === 'subAlert' && w.layout.visible !== false && !w.layout.muted
+      );
+      if (hasUnmutedAlertWidget) playAlertAudio();
       setAlertQueue((prev) => [...prev, alert]);
     });
 
@@ -208,6 +212,7 @@ export const Overlay: React.FC = () => {
                       }
                     : null
                 }
+                muted={widget.layout.muted === true}
                 onAnimationComplete={handleAlertComplete}
               />
             )}
