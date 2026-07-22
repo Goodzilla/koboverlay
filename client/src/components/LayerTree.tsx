@@ -12,6 +12,10 @@ import {
   ChevronRight,
   Plus,
   Upload,
+  BarChart3,
+  Palette,
+  Type,
+  LayoutGrid,
 } from 'lucide-react';
 import { WidgetLayout } from './DraggableWidget';
 
@@ -166,7 +170,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                 </div>
               </div>
 
-              {/* Accordion Body (Per-Widget Inspector & Actions) */}
+              {/* Accordion Body (Structured Inspector with Emphasized Hierarchy) */}
               {isExpanded && (
                 <div
                   style={{
@@ -175,7 +179,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                     background: '#121215',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '12px',
+                    gap: '14px',
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -199,26 +203,16 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                     </button>
                   </div>
 
-                  {/* Form Controls by Widget Type */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* 1. Widget Layer Label (Sidebar & Dragbar Identifier) */}
-                    <div>
-                      <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                        Widget Layer Name (Sidebar & Dragbar)
-                      </label>
-                      <input
-                        type="text"
-                        value={widget.label}
-                        onChange={(e) => onUpdateWidgetConfig(widget.id, {}, e.target.value)}
-                        className="studio-input"
-                        placeholder="e.g. Top Right Sub Goal"
-                      />
+                  {/* SECTION 1: 📌 BASIC INFO & CONTENT (Emphasized at top) */}
+                  <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
+                      <LayoutGrid size={13} color="#6366f1" /> Content & Goal Info
                     </div>
 
-                    {/* 2. Display Text (On Stream Content) */}
+                    {/* Display Text (On Stream) */}
                     {widget.type !== 'customImage' && (
                       <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#818cf8', display: 'block', marginBottom: '4px' }}>
                           Display Text (On Stream Content)
                         </label>
                         <input
@@ -226,12 +220,180 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                           value={widget.config.title !== undefined ? widget.config.title : 'Monthly Sub Goal'}
                           onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value })}
                           className="studio-input"
+                          style={{ fontWeight: 600 }}
                           placeholder="e.g. Monthly Sub Goal"
                         />
                       </div>
                     )}
 
-                    {/* Text Color & Font Size Controls */}
+                    {/* Sub Goal Current & Target Subs */}
+                    {widget.type === 'subGoal' && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#818cf8', display: 'block', marginBottom: '4px' }}>
+                            Current Subs
+                          </label>
+                          <input
+                            type="number"
+                            value={widget.config.currentSubs || 0}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { currentSubs: Number(e.target.value) })}
+                            className="studio-input"
+                            style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#818cf8', display: 'block', marginBottom: '4px' }}>
+                            Target Goal
+                          </label>
+                          <input
+                            type="number"
+                            value={widget.config.targetSubs || 50}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { targetSubs: Number(e.target.value) })}
+                            className="studio-input"
+                            style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sub Alert Dynamic Text Template */}
+                    {widget.type === 'subAlert' && (
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', display: 'block', marginBottom: '4px' }}>
+                          Alert Text Template ({'{username}'}, {'{months}'}, {'{tier}'})
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="{username} subscribed for {months} months ({tier})"
+                          value={widget.config.customTextTemplate || ''}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { customTextTemplate: e.target.value })}
+                          className="studio-input"
+                          style={{ fontSize: '0.75rem' }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Widget Layer Identifier */}
+                    <div>
+                      <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#71717a', display: 'block', marginBottom: '4px' }}>
+                        Widget Layer Name (Sidebar & Dragbar)
+                      </label>
+                      <input
+                        type="text"
+                        value={widget.label}
+                        onChange={(e) => onUpdateWidgetConfig(widget.id, {}, e.target.value)}
+                        className="studio-input"
+                        style={{ fontSize: '0.75rem' }}
+                        placeholder="e.g. Sub Goal Top Right"
+                      />
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: 📊 PROGRESS BAR STYLING (For Sub Goal) */}
+                  {widget.type === 'subGoal' && (
+                    <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
+                        <BarChart3 size={13} color="#6366f1" /> Progress Bar Styling
+                      </div>
+
+                      {/* Toggles */}
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                          <input
+                            type="checkbox"
+                            checked={widget.config.showProgressBar !== false}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { showProgressBar: e.target.checked })}
+                            style={{ accentColor: '#6366f1' }}
+                          />
+                          Show Bar
+                        </label>
+
+                        <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                          <input
+                            type="checkbox"
+                            checked={widget.config.showPercentage !== false}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { showPercentage: e.target.checked })}
+                            style={{ accentColor: '#6366f1' }}
+                          />
+                          Show (%) Text
+                        </label>
+                      </div>
+
+                      {widget.config.showProgressBar !== false && (
+                        <>
+                          {/* Progress Fill Color (Primary Foreground Fill) */}
+                          <div>
+                            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                              Bar Fill Color (Foreground)
+                            </label>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <input
+                                type="color"
+                                value={widget.config.primaryColor || '#6366f1'}
+                                onChange={(e) => onUpdateWidgetConfig(widget.id, { primaryColor: e.target.value })}
+                                style={{ width: '32px', height: '28px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                              />
+                              <input
+                                type="text"
+                                value={widget.config.primaryColor || '#6366f1'}
+                                onChange={(e) => onUpdateWidgetConfig(widget.id, { primaryColor: e.target.value })}
+                                className="studio-input"
+                                style={{ fontSize: '0.75rem', flex: 1 }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Progress Track Color (Unfilled Background Track) */}
+                          <div>
+                            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                              Bar Track Color (Background Track)
+                            </label>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <input
+                                type="color"
+                                value={widget.config.progressBarBgColor === 'rgba(0, 0, 0, 0.5)' ? '#000000' : widget.config.progressBarBgColor || '#000000'}
+                                onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
+                                style={{ width: '32px', height: '28px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                              />
+                              <input
+                                type="text"
+                                value={widget.config.progressBarBgColor || 'rgba(0, 0, 0, 0.5)'}
+                                onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
+                                className="studio-input"
+                                style={{ fontSize: '0.75rem', flex: 1 }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Bar Height */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Progress Bar Height</label>
+                              <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
+                                {widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}px
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="4"
+                              max="30"
+                              value={widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}
+                              onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarHeight: Number(e.target.value) })}
+                              style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* SECTION 3: 🔤 TYPOGRAPHY & MEDIA */}
+                  <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
+                      <Type size={13} color="#6366f1" /> Typography & Media
+                    </div>
+
+                    {/* Text Color & Font Size */}
                     {widget.type !== 'customImage' && (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <div>
@@ -274,7 +436,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       </div>
                     )}
 
-                    {/* Image / GIF Upload & Media URL */}
+                    {/* Image / GIF Upload */}
                     <div>
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
                         {widget.type === 'subGoal' ? 'Optional Custom Icon (Upload or Link)' : 'Custom Media / GIF (Upload or Link)'}
@@ -307,7 +469,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       </div>
                     </div>
 
-                    {/* Image Size Slider (when custom image is set or for alert) */}
+                    {/* Media Height Slider */}
                     {(widget.type === 'subAlert' || widget.config.imageUrl) && (
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -326,86 +488,18 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                         />
                       </div>
                     )}
+                  </div>
 
-                    {/* Sub Goal Specific Progress Bar Options */}
-                    {widget.type === 'subGoal' && (
-                      <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818cf8', borderBottom: '1px solid #27272a', paddingBottom: '4px' }}>
-                          Progress Bar Customization
-                        </div>
+                  {/* SECTION 4: 🎨 CARD CONTAINER STYLING */}
+                  <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
+                      <Palette size={13} color="#6366f1" /> Card Container Styling
+                    </div>
 
-                        {/* Show/Hide Progress Bar & Percentage Toggles */}
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                          <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={widget.config.showProgressBar !== false}
-                              onChange={(e) => onUpdateWidgetConfig(widget.id, { showProgressBar: e.target.checked })}
-                              style={{ accentColor: '#6366f1' }}
-                            />
-                            Show Progress Bar
-                          </label>
-
-                          <label style={{ fontSize: '0.75rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={widget.config.showPercentage !== false}
-                              onChange={(e) => onUpdateWidgetConfig(widget.id, { showPercentage: e.target.checked })}
-                              style={{ accentColor: '#6366f1' }}
-                            />
-                            Show (%) Text
-                          </label>
-                        </div>
-
-                        {/* Progress Bar Track Color & Height Controls */}
-                        {widget.config.showProgressBar !== false && (
-                          <>
-                            <div>
-                              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                                Progress Bar Track Color
-                              </label>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <input
-                                  type="color"
-                                  value={widget.config.progressBarBgColor || '#000000'}
-                                  onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
-                                  style={{ width: '28px', height: '26px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
-                                />
-                                <input
-                                  type="text"
-                                  value={widget.config.progressBarBgColor || 'rgba(0,0,0,0.5)'}
-                                  onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarBgColor: e.target.value })}
-                                  className="studio-input"
-                                  style={{ fontSize: '0.75rem' }}
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Progress Bar Height</label>
-                                <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
-                                  {widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}px
-                                </span>
-                              </div>
-                              <input
-                                type="range"
-                                min="4"
-                                max="30"
-                                value={widget.config.progressBarHeight !== undefined ? widget.config.progressBarHeight : 10}
-                                onChange={(e) => onUpdateWidgetConfig(widget.id, { progressBarHeight: Number(e.target.value) })}
-                                style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
-                              />
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Background Color & Transparent Toggle */}
+                    {/* Background Color */}
                     <div>
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                        Background Color
+                        Card Background Color
                       </label>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <input
@@ -436,10 +530,10 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       </div>
                     </div>
 
-                    {/* Border Radius Options */}
+                    {/* Border Radius */}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Border Radius</label>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Card Border Radius</label>
                         <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
                           {widget.config.borderRadius !== undefined ? widget.config.borderRadius : 10}px
                         </span>
@@ -453,75 +547,6 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                         style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
                       />
                     </div>
-
-                    {/* Accent Color Picker (for subGoal & subAlert) */}
-                    {widget.type !== 'customImage' && (
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                          Primary Fill / Accent Color
-                        </label>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <input
-                            type="color"
-                            value={widget.config.primaryColor || '#6366f1'}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { primaryColor: e.target.value })}
-                            style={{ width: '32px', height: '28px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
-                          />
-                          <input
-                            type="text"
-                            value={widget.config.primaryColor || '#6366f1'}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { primaryColor: e.target.value })}
-                            className="studio-input"
-                            style={{ fontSize: '0.75rem' }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Sub Alert Dynamic Text Template */}
-                    {widget.type === 'subAlert' && (
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                          Alert Text Template ({'{username}'}, {'{months}'}, {'{tier}'})
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="{username} subscribed for {months} months ({tier})"
-                          value={widget.config.customTextTemplate || ''}
-                          onChange={(e) => onUpdateWidgetConfig(widget.id, { customTextTemplate: e.target.value })}
-                          className="studio-input"
-                          style={{ fontSize: '0.75rem' }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Sub Goal Current & Target Subs */}
-                    {widget.type === 'subGoal' && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                        <div>
-                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Current Subs
-                          </label>
-                          <input
-                            type="number"
-                            value={widget.config.currentSubs || 0}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { currentSubs: Number(e.target.value) })}
-                            className="studio-input"
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Target Subs
-                          </label>
-                          <input
-                            type="number"
-                            value={widget.config.targetSubs || 50}
-                            onChange={(e) => onUpdateWidgetConfig(widget.id, { targetSubs: Number(e.target.value) })}
-                            className="studio-input"
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
