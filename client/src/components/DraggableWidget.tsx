@@ -103,13 +103,11 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         rawY = snapValue(rawY, 20);
       }
 
-      const clampedX = Math.max(0, Math.min(1920 - currentLayoutRef.current.width, rawX));
-      const clampedY = Math.max(0, Math.min(1080 - currentLayoutRef.current.height, rawY));
-
+      // Allow free position movement without rigid boundary blocking
       const updated = {
         ...currentLayoutRef.current,
-        x: clampedX,
-        y: clampedY,
+        x: rawX,
+        y: rawY,
       };
 
       setCurrentLayout(updated);
@@ -153,10 +151,11 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         rawH = snapValue(rawH, 20);
       }
 
-      const minW = 100;
-      const minH = 30;
-      const clampedW = Math.max(minW, Math.min(1920 - currentLayoutRef.current.x, rawW));
-      const clampedH = Math.max(minH, Math.min(1080 - currentLayoutRef.current.y, rawH));
+      // Allow free width & height expansion/shrinking without rigid canvas edge blocking
+      const minW = 60;
+      const minH = 20;
+      const clampedW = Math.max(minW, rawW);
+      const clampedH = Math.max(minH, rawH);
 
       const updated = {
         ...currentLayoutRef.current,
@@ -285,7 +284,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
               boxShadow: '0 0 10px rgba(6, 182, 212, 1)',
               zIndex: 150,
             }}
-            title="Click and drag to resize width & height"
+            title="Click and drag to resize width & height freely"
           >
             <Maximize2 size={10} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
           </div>
