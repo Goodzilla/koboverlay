@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Move, Maximize2, RotateCcw } from 'lucide-react';
+import { Move, Maximize2 } from 'lucide-react';
 
 export interface WidgetLayout {
   x: number;      // Position X in PX (0 to 1920)
@@ -56,44 +56,21 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     }
   }, [layout, isDragging, isResizing]);
 
-  // Always auto-wrap dragbox around content natural size with zero dead space
+  // Adjust container height to content natural height when children or properties update
   useEffect(() => {
-    if (!innerContentRef.current) return;
+    if (isResizing || isDragging || !innerContentRef.current) return;
 
-    const updateNaturalBounds = () => {
-      if (!innerContentRef.current) return;
-      const scrollH = innerContentRef.current.scrollHeight;
-      const scrollW = innerContentRef.current.scrollWidth;
-
-      if (scrollH > 0 && scrollW > 0) {
-        const newW = Math.max(100, Math.ceil(scrollW));
-        const newH = Math.max(30, Math.ceil(scrollH));
-
-        if (newW !== currentLayoutRef.current.width || newH !== currentLayoutRef.current.height) {
-          const updated = {
-            ...currentLayoutRef.current,
-            width: newW,
-            height: newH,
-          };
-          setCurrentLayout(updated);
-          currentLayoutRef.current = updated;
-          onLayoutChange(updated);
-        }
-      }
-    };
-
-    updateNaturalBounds();
-
-    const observer = new ResizeObserver(() => {
-      updateNaturalBounds();
-    });
-
-    observer.observe(innerContentRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [children, onLayoutChange]);
+    const scrollH = innerContentRef.current.scrollHeight;
+    if (scrollH > 0 && scrollH !== currentLayoutRef.current.height) {
+      const updated = {
+        ...currentLayoutRef.current,
+        height: Math.ceil(scrollH),
+      };
+      setCurrentLayout(updated);
+      currentLayoutRef.current = updated;
+      onLayoutChange(updated);
+    }
+  }, [children, isResizing, isDragging, onLayoutChange]);
 
   const snapValue = (val: number, step = 20) => {
     return Math.round(val / step) * step;
@@ -176,8 +153,23 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         rawH = snapValue(rawH, 20);
       }
 
-      const ratioW = rawW / startResizeRef.current.startW;
-      const ratioH = rawH / startResizeRef.current.startH;
+      const minW = 100;
+      const minH = 30;
+      const clampedW = Math.max(minW, Math.min(1920 - currentLayoutRef.current.x, rawW));
+      const clampedH = Math.max(minH, Math.min(1080 - currentLayoutRef.current.y, rawH));
+
+      const updated = {
+        ...currentLayoutRef.current,
+        width: clampedW,
+        height: clampedH,
+      };
+
+      setCurrentLayout(updated);
+      currentLayoutRef.current = updated;
+
+      // Scale font and media properties if callback provided
+      const ratioW = clampedW / startResizeRef.current.startW;
+      const ratioH = clampedH / startResizeRef.current.startH;
       const scaleRatio = (ratioW + ratioH) / 2;
 
       if (onScaleChange && Math.abs(scaleRatio - 1.0) > 0.02) {
@@ -190,6 +182,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
       startResizeRef.current = null;
       window.removeEventListener('mousemove', handleResizeMouseMove);
       window.removeEventListener('mouseup', handleResizeMouseUp);
+      onLayoutChange(currentLayoutRef.current);
     };
 
     window.addEventListener('mousemove', handleResizeMouseMove);
@@ -229,7 +222,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             fontSize: '0.7rem',
             fontWeight: 600,
             boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-            minWidth: '200px',
+            minWidth: '180px',
           }}
         >
           {/* Left: Label */}
@@ -247,7 +240,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         </div>
       )}
 
-      {/* Embedded Content Container - ALWAYS Auto-Wraps Content Bounds */}
+      {/* Embedded Content Container */}
       <div
         style={{
           width: `${currentLayout.width}px`,
@@ -257,16 +250,15 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           background: isEditable ? 'rgba(23, 17, 44, 0.4)' : 'transparent',
           position: 'relative',
           boxSizing: 'border-box',
-          display: 'inline-block',
+          overflow: 'hidden',
         }}
       >
         {/* Inner Content Wrapper */}
         <div
           ref={innerContentRef}
           style={{
-            width: 'max-content',
-            height: 'max-content',
-            minWidth: '100%',
+            width: '100%',
+            height: '100%',
             pointerEvents: isEditable ? 'none' : 'auto',
           }}
         >
@@ -293,7 +285,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
               boxShadow: '0 0 10px rgba(6, 182, 212, 1)',
               zIndex: 150,
             }}
-            title="Click and drag to scale widget (fonts & media)"
+            title="Click and drag to resize width & height"
           >
             <Maximize2 size={10} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
           </div>
