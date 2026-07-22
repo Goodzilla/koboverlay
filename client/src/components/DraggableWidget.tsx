@@ -217,35 +217,37 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             minWidth: '220px',
           }}
         >
-          {/* Label + Reset Button Group */}
+          {/* Left: Label */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Move size={12} />
             <span>{label}</span>
+          </div>
+
+          {/* Right: Coordinates + Icon-only Reset Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.7rem', opacity: 0.95, fontFamily: 'var(--font-mono)' }}>
+              X:{currentLayout.x}px Y:{currentLayout.y}px ({currentLayout.width}×{currentLayout.height}px)
+            </span>
+
             <button
               onClick={handleResetSize}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '3px',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                background: 'rgba(255, 255, 255, 0.25)',
-                border: '1px solid rgba(255, 255, 255, 0.4)',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                borderRadius: '4px',
+                background: 'rgba(255, 255, 255, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
                 color: '#ffffff',
-                fontSize: '0.7rem',
-                fontWeight: 800,
                 cursor: 'pointer',
-                transition: 'background 0.2s',
+                transition: 'all 0.15s ease',
               }}
-              title="Reset Size to Default PX"
+              title="Reset Widget Size to Default PX"
             >
-              <RotateCcw size={10} /> Reset Size
+              <RotateCcw size={11} />
             </button>
-          </div>
-
-          {/* Coordinates Badge */}
-          <div style={{ fontSize: '0.7rem', opacity: 0.95, fontFamily: 'var(--font-mono)' }}>
-            X:{currentLayout.x}px Y:{currentLayout.y}px ({currentLayout.width}×{currentLayout.height}px)
           </div>
         </div>
       )}
