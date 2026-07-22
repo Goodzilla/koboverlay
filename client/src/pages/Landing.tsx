@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Tv, Sparkles, ShieldCheck, Zap, ArrowRight, Layers, LogIn, X, CheckCircle } from 'lucide-react';
+import { Tv, Sparkles, ShieldCheck, Zap, Layers, LogIn, ArrowRight, UserCheck } from 'lucide-react';
+import { AuthModal } from '../components/AuthModal';
 
 export const Landing: React.FC = () => {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [tokenInput, setTokenInput] = useState('');
-  const [activeToken, setActiveToken] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: string; username: string; email: string; overlayToken: string } | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('koboverlay_active_token');
+    const saved = localStorage.getItem('koboverlay_user');
     if (saved) {
-      setActiveToken(saved);
+      try {
+        setCurrentUser(JSON.parse(saved));
+      } catch (e) {}
     }
   }, []);
 
-  const handleConnect = (e: React.FormEvent) => {
-    e.preventDefault();
-    const tokenToUse = tokenInput.trim() || activeToken || 'demo-streamer-token';
-    localStorage.setItem('koboverlay_active_token', tokenToUse);
-    window.location.href = `/studio?token=${encodeURIComponent(tokenToUse)}`;
+  const handleAuthSuccess = (user: { id: string; username: string; email: string; overlayToken: string }) => {
+    localStorage.setItem('koboverlay_user', JSON.stringify(user));
+    localStorage.setItem('koboverlay_active_token', user.overlayToken);
+    setCurrentUser(user);
+    window.location.href = `/studio?token=${encodeURIComponent(user.overlayToken)}`;
   };
 
-  const handleOpenLogin = () => {
-    if (activeToken) {
-      window.location.href = `/studio?token=${encodeURIComponent(activeToken)}`;
-    } else {
-      setIsLoginModalOpen(true);
-    }
+  const handleSignOut = () => {
+    localStorage.removeItem('koboverlay_user');
+    localStorage.removeItem('koboverlay_active_token');
+    setCurrentUser(null);
   };
 
   return (
@@ -62,14 +62,36 @@ export const Landing: React.FC = () => {
           </span>
         </div>
 
-        {/* Primary Connect Button Top Right */}
-        <button className="studio-btn studio-btn-primary" onClick={handleOpenLogin} style={{ padding: '8px 18px', fontSize: '0.88rem' }}>
-          <LogIn size={15} /> {activeToken ? 'Go to My Studio' : 'Connect'}
-        </button>
+        {/* Top-Right Account Button System */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {currentUser ? (
+            <>
+              <a
+                href={`/studio?token=${encodeURIComponent(currentUser.overlayToken)}`}
+                className="studio-btn studio-btn-primary"
+                style={{ textDecoration: 'none' }}
+              >
+                Go to My Studio ({currentUser.username}) <ArrowRight size={14} />
+              </a>
+
+              <button className="studio-btn" onClick={handleSignOut} style={{ fontSize: '0.78rem' }}>
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <button
+              className="studio-btn studio-btn-primary"
+              onClick={() => setIsAuthModalOpen(true)}
+              style={{ padding: '8px 18px', fontSize: '0.88rem' }}
+            >
+              <LogIn size={15} /> Sign In / Register
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Main Hero Container */}
-      <main style={{ flex: 1, maxWidth: '960px', width: '100%', margin: '0 auto', padding: '70px 24px', display: 'flex', flexDirection: 'column', gap: '56px' }}>
+      <main style={{ flex: 1, maxWidth: '960px', width: '100%', margin: '0 auto', padding: '80px 24px', display: 'flex', flexDirection: 'column', gap: '56px' }}>
         {/* Hero Section */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
           <div
@@ -89,23 +111,13 @@ export const Landing: React.FC = () => {
             <Sparkles size={12} /> Open-Source Real-time Stream Overlays
           </div>
 
-          <h1 style={{ fontSize: '2.8rem', fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.15, color: '#ffffff' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.15, color: '#ffffff' }}>
             Lightweight, Customizable Overlays for Live Streamers
           </h1>
 
-          <p style={{ fontSize: '1.05rem', color: '#a1a1aa', maxWidth: '620px', lineHeight: 1.6 }}>
-            Design sub alerts, goal bars, and custom sponsor graphics in a real-time studio editor. Share access with your moderators and load seamlessly into OBS Studio.
+          <p style={{ fontSize: '1.08rem', color: '#a1a1aa', maxWidth: '640px', lineHeight: 1.6 }}>
+            Design sub alerts, goal bars, and custom sponsor graphics in a real-time 1920x1080 studio editor. Share access securely with your moderators and load seamlessly into OBS Studio.
           </p>
-
-          <div style={{ marginTop: '10px' }}>
-            <button
-              className="studio-btn studio-btn-primary"
-              onClick={handleOpenLogin}
-              style={{ padding: '12px 28px', fontSize: '0.98rem', fontWeight: 700 }}
-            >
-              {activeToken ? 'Go to My Studio' : 'Connect Studio'} <ArrowRight size={16} />
-            </button>
-          </div>
         </div>
 
         {/* Features Grid */}
@@ -124,9 +136,9 @@ export const Landing: React.FC = () => {
             <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
               <ShieldCheck size={20} color="#38bdf8" />
             </div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px' }}>Moderator Access Sharing</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px' }}>1-Year Shared Mod Links</h3>
             <p style={{ fontSize: '0.85rem', color: '#a1a1aa', lineHeight: 1.5 }}>
-              Streamers can generate a Share Mod Link so moderators can update overlays live on stream.
+              Streamers generate 1-year max shared token links for moderators. Revoke or delete token access anytime from your studio.
             </p>
           </div>
 
@@ -148,8 +160,8 @@ export const Landing: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             <div>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1' }}>STEP 1</div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, marginTop: '2px' }}>Open KobOverlay Studio</div>
-              <p style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '4px' }}>Position your widgets, set colors, and upload sponsor logos.</p>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, marginTop: '2px' }}>Sign In to Studio</div>
+              <p style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '4px' }}>Sign in to position your widgets, set colors, and upload sponsor logos.</p>
             </div>
 
             <div>
@@ -169,93 +181,12 @@ export const Landing: React.FC = () => {
         </div>
       </main>
 
-      {/* Dedicated Login / Connect Modal */}
-      {isLoginModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}
-          onClick={() => setIsLoginModalOpen(false)}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              background: '#121215',
-              border: '1px solid #27272a',
-              borderRadius: '16px',
-              padding: '28px',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
-              color: '#ffffff',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <LogIn size={18} color="#6366f1" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Connect Studio</h3>
-              </div>
-              <button
-                onClick={() => setIsLoginModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', display: 'flex' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <p style={{ fontSize: '0.85rem', color: '#a1a1aa', lineHeight: 1.5 }}>
-              Enter your streamer channel name or account token to open your personalized studio canvas.
-            </p>
-
-            {/* Login Form */}
-            <form onSubmit={handleConnect} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '6px' }}>
-                  Streamer Channel or Token
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. streamer-name or demo-streamer-token"
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  className="studio-input"
-                  style={{ padding: '10px 14px', fontSize: '0.9rem' }}
-                  autoFocus
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="studio-btn studio-btn-primary"
-                style={{ padding: '12px', fontSize: '0.92rem', fontWeight: 700, width: '100%', justifyContent: 'center' }}
-              >
-                Launch Studio Canvas <ArrowRight size={16} />
-              </button>
-            </form>
-
-            {activeToken && (
-              <div style={{ fontSize: '0.8rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '6px', borderTop: '1px solid #27272a', paddingTop: '14px' }}>
-                <CheckCircle size={14} /> Saved session token: <strong>{activeToken}</strong>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Account Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
 
       {/* Footer */}
       <footer style={{ padding: '20px', borderTop: '1px solid #27272a', textAlign: 'center', fontSize: '0.8rem', color: '#71717a' }}>

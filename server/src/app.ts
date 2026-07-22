@@ -3,7 +3,10 @@ import cors from 'cors';
 import path from 'path';
 import overlayRoutes from './routes/overlayRoutes';
 
-export function createApp() {
+import authRoutes from './routes/authRoutes';
+import tokenRoutes from './routes/tokenRoutes';
+
+export function createApp(): express.Application {
   const app = express();
 
   app.use(cors());
@@ -15,6 +18,8 @@ export function createApp() {
   });
 
   // REST API Routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/tokens', tokenRoutes);
   app.use('/api/overlay', overlayRoutes);
 
   // Serve static client files in production

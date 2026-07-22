@@ -13,6 +13,7 @@ import {
 
 interface StudioToolbarProps {
   token: string;
+  userId?: string;
   canUndo: boolean;
   canRedo: boolean;
   gridSnap: boolean;
@@ -21,10 +22,12 @@ interface StudioToolbarProps {
   onRedo: () => void;
   onToggleGridSnap: () => void;
   onResetAllLayouts: () => void;
+  onOpenModManager?: () => void;
 }
 
 export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   token,
+  userId,
   canUndo,
   canRedo,
   gridSnap,
@@ -33,6 +36,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   onRedo,
   onToggleGridSnap,
   onResetAllLayouts,
+  onOpenModManager,
 }) => {
   const [copiedObs, setCopiedObs] = useState(false);
   const [copiedMod, setCopiedMod] = useState(false);
@@ -130,24 +134,25 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
         </button>
       </div>
 
-      {/* Right: Mod Share & OBS URL Links */}
+      {/* Right: Mod Manager & OBS URL Links */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Share Mod Access Link */}
-        <button
-          className="studio-btn"
-          onClick={copyModUrl}
-          style={{
-            background: copiedMod ? 'rgba(16, 185, 129, 0.15)' : '#18181b',
-            borderColor: copiedMod ? '#10b981' : '#27272a',
-            color: copiedMod ? '#10b981' : '#ffffff',
-            fontSize: '0.75rem',
-            padding: '6px 12px',
-          }}
-          title="Copy Moderator Editing Link to invite mods"
-        >
-          {copiedMod ? <Check size={13} /> : <Users size={13} />}
-          {copiedMod ? 'Mod Link Copied!' : 'Share Mod Link'}
-        </button>
+        {/* Manage Mod Tokens */}
+        {onOpenModManager && (
+          <button
+            className="studio-btn"
+            onClick={onOpenModManager}
+            style={{
+              background: '#18181b',
+              borderColor: '#27272a',
+              color: '#ffffff',
+              fontSize: '0.75rem',
+              padding: '6px 12px',
+            }}
+            title="Manage 1-Year Shared Moderator Links"
+          >
+            <Users size={13} /> Manage Mod Links
+          </button>
+        )}
 
         {/* Copy OBS URL */}
         <button

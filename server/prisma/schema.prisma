@@ -8,14 +8,31 @@ generator client {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  overlayToken String         @unique @default(uuid())
-  twitchId     String?        @unique
-  username     String
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  config       OverlayConfig?
-  alerts       AlertHistory[]
+  id               String            @id @default(uuid())
+  overlayToken     String            @unique @default(uuid())
+  twitchId         String?           @unique
+  username         String            @unique
+  email            String            @unique
+  passwordHash     String
+  emailConfirmed   Boolean           @default(false)
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  config           OverlayConfig?
+  alerts           AlertHistory[]
+  sharedTokens     SharedModToken[]
+}
+
+model SharedModToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @default(uuid())
+  label     String   @default("Moderator Shared Link")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
 }
 
 model OverlayConfig {
@@ -34,13 +51,13 @@ model OverlayConfig {
 }
 
 model AlertHistory {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        String
-  username    String
-  tier        String
-  months      Int?     @default(1)
-  message     String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  username  String
+  tier      String
+  months    Int?     @default(1)
+  message   String?
+  createdAt DateTime @default(now())
 }

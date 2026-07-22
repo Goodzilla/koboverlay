@@ -58,6 +58,8 @@ const DEFAULT_STUDIO_STATE: StudioState = {
   widgets: DEFAULT_WIDGETS,
 };
 
+import { ModTokenManagerModal } from '../components/ModTokenManagerModal';
+
 export const Dashboard: React.FC = () => {
   // Extract token from URL search query parameter (e.g. /studio?token=XYZ) or path
   const [token] = useState<string>(() => {
@@ -65,10 +67,24 @@ export const Dashboard: React.FC = () => {
     const queryToken = urlParams.get('token');
     if (queryToken) return queryToken;
 
+    const savedUser = localStorage.getItem('koboverlay_user');
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.overlayToken) return parsed.overlayToken;
+      } catch (e) {}
+    }
+
     const pathParts = window.location.pathname.split('/');
     const pathToken = pathParts[pathParts.length - 1];
     return pathToken && pathToken !== 'studio' ? pathToken : 'demo-streamer-token';
   });
+
+  const [currentUser] = useState<{ id: string; username: string; email: string; overlayToken: string } | null>(() => {
+    const saved = localStorage.getItem('koboverlay_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 
@@ -77,6 +93,7 @@ export const Dashboard: React.FC = () => {
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>('subGoal_default');
   const [gridSnap, setGridSnap] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isModManagerOpen, setIsModManagerOpen] = useState(false);
 
   // History Stack Engine (Ctrl+Z and Ctrl+Shift+Z)
   const getInitialState = (): StudioState => {
@@ -289,6 +306,7 @@ export const Dashboard: React.FC = () => {
       {/* Top Toolbar */}
       <StudioToolbar
         token={token}
+        userId={currentUser?.id}
         canUndo={canUndo}
         canRedo={canRedo}
         gridSnap={gridSnap}
@@ -297,6 +315,7 @@ export const Dashboard: React.FC = () => {
         onRedo={redo}
         onToggleGridSnap={() => setGridSnap(!gridSnap)}
         onResetAllLayouts={handleResetAllLayouts}
+        onOpenModManager={() => setIsModManagerOpen(true)}
       />
 
       {/* Main Studio Workspace Split */}
@@ -500,6 +519,13 @@ export const Dashboard: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddWidget={handleAddWidget}
+      />
+
+      {/* Shared Mod Tokens Manager Modal */}
+      <ModTokenManagerModal
+        isOpen={isModManagerOpen}
+        onClose={() => setIsModManagerOpen(false)}
+        userId={currentUser?.id || 'demo-user-id'}
       />
     </div>
   );
