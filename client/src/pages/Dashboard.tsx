@@ -270,6 +270,25 @@ export const Dashboard: React.FC = () => {
     }));
   };
 
+  const handleCenterWidget = (id: string) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => {
+        if (w.id !== id) return w;
+        const centerX = Math.max(0, Math.round((1920 - w.layout.width) / 2));
+        const centerY = Math.max(0, Math.round((1080 - w.layout.height) / 2));
+        return {
+          ...w,
+          layout: {
+            ...w.layout,
+            x: centerX,
+            y: centerY,
+          },
+        };
+      }),
+    }));
+  };
+
   const handleScaleWidget = (id: string, scaleRatio: number) => {
     setStudioState((prev) => ({
       ...prev,
@@ -411,6 +430,7 @@ export const Dashboard: React.FC = () => {
                   onToggleVisibility={handleToggleVisibility}
                   onDuplicateWidget={handleDuplicateWidget}
                   onDeleteWidget={handleDeleteWidget}
+                  onCenterWidget={handleCenterWidget}
                   onResetWidgetSize={handleResetWidgetSize}
                   onUpdateWidgetConfig={handleUpdateWidgetConfig}
                   onOpenAddModal={() => setIsAddModalOpen(true)}
