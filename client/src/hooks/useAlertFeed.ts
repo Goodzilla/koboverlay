@@ -43,8 +43,11 @@ export function useAlertFeed(widgets: WidgetInstance[], onEmitAlert?: (alert: Al
       soundVolume: matchedWidget?.config.soundVolume,
     };
 
-    setAlertQueue((prev) => [...prev, simAlert]);
-    if (onEmitAlert) onEmitAlert(simAlert);
+    if (onEmitAlert) {
+      onEmitAlert(simAlert);
+    } else {
+      setAlertQueue((prev) => (prev.some((a) => a.id === simAlert.id) ? prev : [...prev, simAlert]));
+    }
   }, [widgets, onEmitAlert]);
 
   const handleAlertComplete = useCallback(() => {
@@ -74,8 +77,12 @@ export function useAlertFeed(widgets: WidgetInstance[], onEmitAlert?: (alert: Al
       ...alert,
       id: `replay_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
     };
-    setAlertQueue((prev) => [...prev, freshAlert]);
-    if (onEmitAlert) onEmitAlert(freshAlert);
+
+    if (onEmitAlert) {
+      onEmitAlert(freshAlert);
+    } else {
+      setAlertQueue((prev) => (prev.some((a) => a.id === freshAlert.id) ? prev : [...prev, freshAlert]));
+    }
   }, [onEmitAlert]);
 
   const handleClearHistory = useCallback(() => {

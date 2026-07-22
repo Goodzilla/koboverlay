@@ -117,8 +117,10 @@ export const Dashboard: React.FC = () => {
     sock.on('disconnect', () => setConnected(false));
 
     sock.on('new-alert', (alert: AlertData) => {
-      setAlertQueue((prev) => [...prev, alert]);
-      setIsRightSidebarOpen(true);
+      setAlertQueue((prev) => {
+        if (prev.some((a) => a.id === alert.id)) return prev;
+        return [...prev, alert];
+      });
     });
 
     return () => {
