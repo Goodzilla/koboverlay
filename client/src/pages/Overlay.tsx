@@ -2,16 +2,16 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createOverlaySocket } from '../utils/socket';
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
-import { DraggableWidget, WidgetPosition } from '../components/DraggableWidget';
+import { DraggableWidget, WidgetLayout } from '../components/DraggableWidget';
 
 interface LayoutState {
-  subGoal: WidgetPosition;
-  subAlert: WidgetPosition;
+  subGoal: WidgetLayout;
+  subAlert: WidgetLayout;
 }
 
 const DEFAULT_LAYOUT: LayoutState = {
-  subGoal: { x: 65, y: 5 },
-  subAlert: { x: 30, y: 35 },
+  subGoal: { x: 1300, y: 40, width: 380, height: 100 },
+  subAlert: { x: 700, y: 380, width: 520, height: 260 },
 };
 
 export const Overlay: React.FC = () => {
@@ -19,9 +19,9 @@ export const Overlay: React.FC = () => {
   const [currentAlert, setCurrentAlert] = useState<AlertData | null>(null);
   const [alertQueue, setAlertQueue] = useState<AlertData[]>([]);
 
-  // Layout positions state
+  // Layout positions state in PX
   const [layout, setLayout] = useState<LayoutState>(() => {
-    const saved = localStorage.getItem(`streampulse_layout_${token}`);
+    const saved = localStorage.getItem(`streampulse_layout_px_${token}`);
     return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
   });
 
@@ -45,7 +45,7 @@ export const Overlay: React.FC = () => {
     setToken(activeToken);
 
     // Read saved layout for this token
-    const saved = localStorage.getItem(`streampulse_layout_${activeToken}`);
+    const saved = localStorage.getItem(`streampulse_layout_px_${activeToken}`);
     if (saved) {
       try {
         setLayout(JSON.parse(saved));
@@ -71,11 +71,11 @@ export const Overlay: React.FC = () => {
       setGoalData(data);
     });
 
-    // Listen for real-time Layout position updates from Dashboard drag & drop!
+    // Listen for real-time Layout position/size updates from Dashboard drag & drop!
     socket.on('layout-updated', (newLayout: LayoutState) => {
-      console.log('📍 Real-time Layout Updated:', newLayout);
+      console.log('📍 Real-time PX Layout Updated:', newLayout);
       setLayout(newLayout);
-      localStorage.setItem(`streampulse_layout_${activeToken}`, JSON.stringify(newLayout));
+      localStorage.setItem(`streampulse_layout_px_${activeToken}`, JSON.stringify(newLayout));
     });
 
     return () => {
@@ -130,13 +130,13 @@ export const Overlay: React.FC = () => {
         background: 'transparent',
       }}
     >
-      {/* Sub Goal Bar Positioned dynamically */}
+      {/* Sub Goal Bar Positioned & Resized dynamically in PX */}
       <DraggableWidget
         id="subGoal"
         label="Sub Goal"
-        position={layout.subGoal}
+        layout={layout.subGoal}
         isEditable={false}
-        onPositionChange={() => {}}
+        onLayoutChange={() => {}}
       >
         <SubGoalWidget
           title={goalData.title}
@@ -146,13 +146,13 @@ export const Overlay: React.FC = () => {
         />
       </DraggableWidget>
 
-      {/* Sub Alert Popup Positioned dynamically */}
+      {/* Sub Alert Popup Positioned & Resized dynamically in PX */}
       <DraggableWidget
         id="subAlert"
         label="Sub Alert"
-        position={layout.subAlert}
+        layout={layout.subAlert}
         isEditable={false}
-        onPositionChange={() => {}}
+        onLayoutChange={() => {}}
       >
         <SubAlertWidget alert={currentAlert} onAnimationComplete={handleAlertComplete} />
       </DraggableWidget>

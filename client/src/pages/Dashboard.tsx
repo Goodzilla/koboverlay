@@ -3,7 +3,7 @@ import { Socket } from 'socket.io-client';
 import { createOverlaySocket } from '../utils/socket';
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
-import { DraggableWidget, WidgetPosition } from '../components/DraggableWidget';
+import { DraggableWidget, WidgetLayout } from '../components/DraggableWidget';
 import {
   Radio,
   Copy,
@@ -20,16 +20,17 @@ import {
   Lock,
   Unlock,
   RotateCcw,
+  Maximize2,
 } from 'lucide-react';
 
 interface LayoutState {
-  subGoal: WidgetPosition;
-  subAlert: WidgetPosition;
+  subGoal: WidgetLayout;
+  subAlert: WidgetLayout;
 }
 
 const DEFAULT_LAYOUT: LayoutState = {
-  subGoal: { x: 65, y: 5 },
-  subAlert: { x: 30, y: 35 },
+  subGoal: { x: 1300, y: 40, width: 380, height: 100 },
+  subAlert: { x: 700, y: 380, width: 520, height: 260 },
 };
 
 export const Dashboard: React.FC = () => {
@@ -45,10 +46,10 @@ export const Dashboard: React.FC = () => {
   const [currentSubs, setCurrentSubs] = useState(14);
   const [targetSubs, setTargetSubs] = useState(50);
 
-  // Interactive Layout Positioning State
+  // Interactive Layout Positioning State (in PX)
   const [isEditMode, setIsEditMode] = useState(true);
   const [layout, setLayout] = useState<LayoutState>(() => {
-    const saved = localStorage.getItem(`streampulse_layout_${token}`);
+    const saved = localStorage.getItem(`streampulse_layout_px_${token}`);
     return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
   });
 
@@ -58,12 +59,11 @@ export const Dashboard: React.FC = () => {
     type: 'sub',
     username: 'DemoGamer',
     tier: '1000',
-    durationMs: 999999, // Keep visible in edit mode for positioning
+    durationMs: 999999,
     primaryColor: '#7c3aed',
   });
 
   useEffect(() => {
-    // Initialize Socket.io connection to backend server
     const newSocket = createOverlaySocket();
 
     newSocket.on('connect', () => {
@@ -90,15 +90,15 @@ export const Dashboard: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleLayoutChange = (widgetId: 'subGoal' | 'subAlert', newPos: WidgetPosition) => {
+  const handleLayoutChange = (widgetId: 'subGoal' | 'subAlert', newLayout: WidgetLayout) => {
     const updatedLayout = {
       ...layout,
-      [widgetId]: newPos,
+      [widgetId]: newLayout,
     };
     setLayout(updatedLayout);
 
-    // Save locally
-    localStorage.setItem(`streampulse_layout_${token}`, JSON.stringify(updatedLayout));
+    // Save locally with PX coordinates
+    localStorage.setItem(`streampulse_layout_px_${token}`, JSON.stringify(updatedLayout));
 
     // Broadcast live over WebSockets to OBS Studio!
     if (socket && connected) {
@@ -108,7 +108,7 @@ export const Dashboard: React.FC = () => {
 
   const resetLayout = () => {
     setLayout(DEFAULT_LAYOUT);
-    localStorage.setItem(`streampulse_layout_${token}`, JSON.stringify(DEFAULT_LAYOUT));
+    localStorage.setItem(`streampulse_layout_px_${token}`, JSON.stringify(DEFAULT_LAYOUT));
     if (socket && connected) {
       socket.emit('update-layout', { token, layout: DEFAULT_LAYOUT });
     }
@@ -183,11 +183,11 @@ export const Dashboard: React.FC = () => {
                 color: '#c084fc',
               }}
             >
-              LAYOUT ENGINE ACTIVE
+              PX LAYOUT & RESIZE ENGINE
             </span>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '4px' }}>
-            Real-time OBS Browser Source Overlay & Interactive Drag-and-Drop Control Panel
+            Real-time OBS Overlay Engine with Pixel (PX) Positioning & Dynamic Resizing
           </p>
         </div>
 
@@ -236,7 +236,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* Main Grid: Left Controls & Right Drag-and-Drop Canvas */}
+      {/* Main Grid: Left Controls & Right Resizable Canvas */}
       <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '28px' }}>
         {/* Left Column: Test Event Simulator & Customization */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -317,17 +317,17 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Interactive Drag-and-Drop Overlay Canvas */}
+        {/* Right Column: Interactive Resizable & Draggable Canvas in PX */}
         <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Move size={20} color="#06b6d4" />
-              Interactive Drag & Drop Canvas
+              <Maximize2 size={20} color="#06b6d4" />
+              Interactive PX Canvas (Drag & Resize)
             </h2>
 
-            {/* Edit / Lock Toggle Controls */}
+            {/* Edit / Lock Controls */}
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="btn btn-secondary" onClick={resetLayout} title="Reset to Default Positions">
+              <button className="btn btn-secondary" onClick={resetLayout} title="Reset to Default PX Positions">
                 <RotateCcw size={16} /> Reset
               </button>
               <button
@@ -335,13 +335,13 @@ export const Dashboard: React.FC = () => {
                 onClick={() => setIsEditMode(!isEditMode)}
               >
                 {isEditMode ? <Unlock size={16} /> : <Lock size={16} />}
-                {isEditMode ? 'Drag Mode ON' : 'Locked Mode'}
+                {isEditMode ? 'Edit & Resize ON' : 'Locked Mode'}
               </button>
             </div>
           </div>
 
           <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '16px' }}>
-            💡 <strong>Click and drag elements</strong> anywhere on the 1920x1080 canvas below. Positions are saved automatically and synced live to your OBS Studio overlay!
+            💡 <strong>Drag elements</strong> to move (in PX) and <strong>drag bottom-right handle</strong> to resize width/height. Positions are saved automatically and synced live to OBS!
           </p>
 
           {/* Interactive 1920x1080 Simulated Canvas */}
@@ -357,24 +357,24 @@ export const Dashboard: React.FC = () => {
               boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8)',
             }}
           >
-            {/* Draggable Sub Goal Widget */}
+            {/* Draggable & Resizable Sub Goal Widget */}
             <DraggableWidget
               id="subGoal"
               label="Sub Goal Bar"
-              position={layout.subGoal}
+              layout={layout.subGoal}
               isEditable={isEditMode}
-              onPositionChange={(newPos) => handleLayoutChange('subGoal', newPos)}
+              onLayoutChange={(newLayout) => handleLayoutChange('subGoal', newLayout)}
             >
               <SubGoalWidget title={goalTitle} currentSubs={currentSubs} targetSubs={targetSubs} primaryColor={primaryColor} />
             </DraggableWidget>
 
-            {/* Draggable Sub Alert Widget */}
+            {/* Draggable & Resizable Sub Alert Widget */}
             <DraggableWidget
               id="subAlert"
               label="Sub Alert Popup"
-              position={layout.subAlert}
+              layout={layout.subAlert}
               isEditable={isEditMode}
-              onPositionChange={(newPos) => handleLayoutChange('subAlert', newPos)}
+              onLayoutChange={(newLayout) => handleLayoutChange('subAlert', newLayout)}
             >
               <SubAlertWidget alert={previewAlert} />
             </DraggableWidget>
@@ -392,7 +392,7 @@ export const Dashboard: React.FC = () => {
                 pointerEvents: 'none',
               }}
             >
-              OBS CANVAS 1920x1080 • LIVE SOCKET SYNC
+              OBS RESOLUTION 1920x1080 PX • LIVE WEBSOCKET SYNC
             </div>
           </div>
         </div>
