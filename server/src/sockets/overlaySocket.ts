@@ -35,6 +35,14 @@ export function setupOverlaySockets(io: Server) {
       });
     });
 
+    // Streamer updates overlay layout positions (drag & drop)
+    socket.on('update-layout', (data: { token: string; layout: any }) => {
+      const room = `overlay:${data.token}`;
+      console.log(`📍 Updating layout positions in ${room}:`, data.layout);
+
+      io.to(room).emit('layout-updated', data.layout);
+    });
+
     // Streamer updates Overlay visual settings (primary color, sound, etc.)
     socket.on('update-overlay-config', (data: { token: string; config: any }) => {
       const room = `overlay:${data.token}`;

@@ -22,13 +22,14 @@ model OverlayConfig {
   id             String   @id @default(uuid())
   userId         String   @unique
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  primaryColor   String   @default("#7c3aed") // Dynamic purple gradient
-  alertDuration  Int      @default(5000) // In milliseconds
+  primaryColor   String   @default("#7c3aed")
+  alertDuration  Int      @default(5000)
   soundEnabled   Boolean  @default(true)
   soundVolume    Float    @default(0.8)
   goalTitle      String   @default("Sub Goal")
-  currentSubs    Int      @default(12)
+  currentSubs    Int      @default(14)
   targetSubs     Int      @default(50)
+  layoutConfig   String   @default("{\"subGoal\":{\"x\":70,\"y\":5},\"subAlert\":{\"x\":30,\"y\":40}}")
   updatedAt      DateTime @updatedAt
 }
 
@@ -36,9 +37,9 @@ model AlertHistory {
   id          String   @id @default(uuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        String   // "sub", "resub", "subgift"
+  type        String
   username    String
-  tier        String   // "Prime", "1000", "2000", "3000"
+  tier        String
   months      Int?     @default(1)
   message     String?
   createdAt   DateTime @default(now())
