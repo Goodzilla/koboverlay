@@ -15,6 +15,8 @@ export interface AlertData {
   borderRadius?: number;
   imageUrl?: string;
   imageSize?: number;
+  soundUrl?: string;
+  soundVolume?: number;
   customTextTemplate?: string;
 }
 
@@ -29,6 +31,17 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
   useEffect(() => {
     if (alert) {
       setAnimState('enter');
+
+      // Play alert sound if configured
+      if (alert.soundUrl) {
+        try {
+          const audio = new Audio(alert.soundUrl);
+          audio.volume = (alert.soundVolume !== undefined ? alert.soundVolume : 80) / 100;
+          audio.play().catch((err) => console.log('Audio autoplay prevented or error:', err));
+        } catch (e) {
+          console.error('Failed to play alert sound:', e);
+        }
+      }
 
       const duration = alert.durationMs || 5000;
       const exitTimer = setTimeout(() => {

@@ -17,6 +17,8 @@ import {
   Type,
   LayoutGrid,
   Crosshair,
+  Volume2,
+  Play,
 } from 'lucide-react';
 import { WidgetLayout } from './DraggableWidget';
 
@@ -29,6 +31,8 @@ export interface WidgetInstance {
     title?: string;
     imageUrl?: string;
     imageSize?: number;
+    soundUrl?: string;
+    soundVolume?: number;
     primaryColor?: string;
     backgroundColor?: string;
     textColor?: string;
@@ -82,15 +86,30 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
     return <ImageIcon size={14} color="#10b981" />;
   };
 
-  const handleFileUpload = (widgetId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (widgetId: string, e: React.ChangeEvent<HTMLInputElement>, isAudio = false) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const base64Url = event.target?.result as string;
-        onUpdateWidgetConfig(widgetId, { imageUrl: base64Url });
+        if (isAudio) {
+          onUpdateWidgetConfig(widgetId, { soundUrl: base64Url });
+        } else {
+          onUpdateWidgetConfig(widgetId, { imageUrl: base64Url });
+        }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePlaySoundPreview = (url?: string, volume = 80) => {
+    if (!url) return;
+    try {
+      const audio = new Audio(url);
+      audio.volume = volume / 100;
+      audio.play().catch((err) => console.log('Audio preview blocked:', err));
+    } catch (e) {
+      console.error('Audio preview error:', e);
     }
   };
 
@@ -214,7 +233,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                     </button>
                   </div>
 
-                  {/* SECTION 1: 📌 BASIC INFO & CONTENT (Emphasized at top) */}
+                  {/* SECTION 1: 📌 BASIC INFO & CONTENT */}
                   <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
                       <LayoutGrid size={13} color="#6366f1" /> Content & Goal Info
@@ -398,7 +417,80 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                     </div>
                   )}
 
-                  {/* SECTION 3: 🔤 TYPOGRAPHY & MEDIA */}
+                  {/* SECTION 3: 🔊 SOUND CONFIGURATION (For Sub Alert) */}
+                  {widget.type === 'subAlert' && (
+                    <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
+                        <Volume2 size={13} color="#38bdf8" /> Alert Sound Effect
+                      </div>
+
+                      {/* Sound Upload & URL Link */}
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                          Sound File (Upload MP3 / WAV or Link)
+                        </label>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            placeholder="https://example.com/sound.mp3"
+                            value={widget.config.soundUrl || ''}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { soundUrl: e.target.value })}
+                            className="studio-input"
+                            style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', flex: 1 }}
+                          />
+
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            id={`sound_upload_${widget.id}`}
+                            onChange={(e) => handleFileUpload(widget.id, e, true)}
+                            style={{ display: 'none' }}
+                          />
+                          <label
+                            htmlFor={`sound_upload_${widget.id}`}
+                            className="studio-btn studio-btn-primary"
+                            style={{ padding: '6px 10px', fontSize: '0.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                            title="Upload Audio File from computer"
+                          >
+                            <Upload size={12} /> Upload Sound
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Sound Volume Slider & Test Button */}
+                      {widget.config.soundUrl && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Sound Volume</label>
+                              <span style={{ fontSize: '0.7rem', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                                {widget.config.soundVolume !== undefined ? widget.config.soundVolume : 80}%
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={widget.config.soundVolume !== undefined ? widget.config.soundVolume : 80}
+                              onChange={(e) => onUpdateWidgetConfig(widget.id, { soundVolume: Number(e.target.value) })}
+                              style={{ width: '100%', accentColor: '#38bdf8', cursor: 'pointer' }}
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            className="studio-btn"
+                            onClick={() => handlePlaySoundPreview(widget.config.soundUrl, widget.config.soundVolume)}
+                            style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)' }}
+                          >
+                            <Play size={12} /> Test Sound Preview
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* SECTION 4: 🔤 TYPOGRAPHY & MEDIA */}
                   <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
                       <Type size={13} color="#6366f1" /> Typography & Media
@@ -466,7 +558,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                           type="file"
                           accept="image/*"
                           id={`file_upload_${widget.id}`}
-                          onChange={(e) => handleFileUpload(widget.id, e)}
+                          onChange={(e) => handleFileUpload(widget.id, e, false)}
                           style={{ display: 'none' }}
                         />
                         <label
@@ -501,7 +593,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                     )}
                   </div>
 
-                  {/* SECTION 4: 🎨 CARD CONTAINER STYLING */}
+                  {/* SECTION 5: 🎨 CARD CONTAINER STYLING */}
                   <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
                       <Palette size={13} color="#6366f1" /> Card Container Styling

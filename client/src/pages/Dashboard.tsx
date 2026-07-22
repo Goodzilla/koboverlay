@@ -552,6 +552,8 @@ export const Dashboard: React.FC = () => {
                               borderRadius: widget.config.borderRadius,
                               imageUrl: widget.config.imageUrl,
                               imageSize: widget.config.imageSize,
+                              soundUrl: widget.config.soundUrl,
+                              soundVolume: widget.config.soundVolume,
                               customTextTemplate: widget.config.customTextTemplate,
                             }
                           : null

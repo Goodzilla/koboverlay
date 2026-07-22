@@ -202,6 +202,8 @@ export const Overlay: React.FC = () => {
                         borderRadius: widget.config.borderRadius,
                         imageUrl: widget.config.imageUrl || currentAlert.imageUrl,
                         imageSize: widget.config.imageSize || currentAlert.imageSize,
+                        soundUrl: widget.config.soundUrl || currentAlert.soundUrl,
+                        soundVolume: widget.config.soundVolume !== undefined ? widget.config.soundVolume : currentAlert.soundVolume,
                         customTextTemplate: widget.config.customTextTemplate,
                       }
                     : null
