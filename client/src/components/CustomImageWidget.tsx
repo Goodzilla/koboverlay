@@ -3,6 +3,7 @@ import { Image as ImageIcon } from 'lucide-react';
 
 interface CustomImageWidgetProps {
   imageUrl?: string;
+  imageSize?: number;
   altText?: string;
   backgroundColor?: string;
   borderRadius?: number;
@@ -10,11 +11,14 @@ interface CustomImageWidgetProps {
 
 export const CustomImageWidget: React.FC<CustomImageWidgetProps> = ({
   imageUrl = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80',
+  imageSize,
   altText = 'Sponsor Logo',
   backgroundColor = 'transparent',
   borderRadius = 8,
 }) => {
   const [hasError, setHasError] = useState(false);
+
+  const imgHeight = imageSize ? `${imageSize}px` : '100%';
 
   return (
     <div
@@ -37,8 +41,9 @@ export const CustomImageWidget: React.FC<CustomImageWidgetProps> = ({
           alt={altText}
           onError={() => setHasError(true)}
           style={{
-            width: '100%',
-            height: '100%',
+            height: imgHeight,
+            maxWidth: '100%',
+            maxHeight: '100%',
             objectFit: 'contain',
             pointerEvents: 'none',
             borderRadius: `${borderRadius}px`,

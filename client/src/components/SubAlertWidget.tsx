@@ -103,23 +103,24 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
         textAlign: 'center',
       }}
     >
-      {/* Uploaded / Custom Image ABOVE the text */}
+      {/* Dynamic Uploaded / Custom Image ABOVE the text */}
       {alert.imageUrl && (
         <div
           style={{
             height: `${imgSize}px`,
-            maxHeight: '200px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'hidden',
+            flexShrink: 0,
           }}
         >
           <img
             src={alert.imageUrl}
             alt="Alert Media"
             style={{
-              height: '100%',
+              height: `${imgSize}px`,
+              width: 'auto',
+              maxHeight: '100%',
               maxWidth: '100%',
               objectFit: 'contain',
               borderRadius: '6px',

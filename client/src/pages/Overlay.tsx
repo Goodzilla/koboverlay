@@ -209,6 +209,7 @@ export const Overlay: React.FC = () => {
             {widget.type === 'customImage' && (
               <CustomImageWidget
                 imageUrl={widget.config.imageUrl}
+                imageSize={widget.config.imageSize}
                 altText={widget.config.title}
                 backgroundColor={widget.config.backgroundColor}
                 borderRadius={widget.config.borderRadius}
