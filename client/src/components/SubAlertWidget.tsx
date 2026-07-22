@@ -25,22 +25,19 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
     if (alert) {
       setAnimState('enter');
 
-      // Trigger colorful confetti burst on overlay
       try {
         confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.3 },
-          colors: ['#7c3aed', '#a855f7', '#06b6d4', '#ec4899', '#f59e0b'],
+          particleCount: 60,
+          spread: 60,
+          origin: { y: 0.35 },
+          colors: ['#6366f1', '#38bdf8', '#a855f7'],
         });
-      } catch (err) {
-        // Ignore fallback if canvas context missing in tests
-      }
+      } catch (err) {}
 
       const duration = alert.durationMs || 5000;
       const exitTimer = setTimeout(() => {
         setAnimState('exit');
-      }, duration - 500);
+      }, Math.max(500, duration - 400));
 
       const hideTimer = setTimeout(() => {
         setAnimState('hidden');
@@ -58,133 +55,110 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
 
   if (!alert || animState === 'hidden') return null;
 
-  const primaryColor = alert.primaryColor || '#7c3aed';
+  const accentColor = alert.primaryColor || '#6366f1';
+
   const getTierLabel = () => {
-    if (alert.tier === 'Prime') return 'Twitch Prime Sub';
-    if (alert.tier === '2000') return 'Tier 2 Sub';
-    if (alert.tier === '3000') return 'Tier 3 Sub';
-    return 'Tier 1 Sub';
+    if (alert.tier === 'Prime') return 'Prime Sub';
+    if (alert.tier === '2000') return 'Tier 2';
+    if (alert.tier === '3000') return 'Tier 3';
+    return 'Tier 1';
   };
 
   const getSubHeader = () => {
-    if (alert.type === 'subgift') return 'GIFT SUBSCRIBER!';
-    if (alert.type === 'resub') return `RE-SUBSCRIBED FOR ${alert.months || 1} MONTHS!`;
-    return 'NEW SUBSCRIBER!';
+    if (alert.type === 'subgift') return 'Gift Subscription';
+    if (alert.type === 'resub') return `Re-Subscribed (${alert.months || 1} Months)`;
+    return 'New Subscriber';
   };
 
   return (
     <div
-      className={`alert-container ${
-        animState === 'enter' ? 'animate-alert-enter' : 'animate-alert-exit'
-      }`}
+      className={animState === 'enter' ? 'animate-alert-enter' : 'animate-alert-exit'}
       style={{
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px 36px',
-        borderRadius: '24px',
-        background: `linear-gradient(135deg, rgba(23, 17, 44, 0.92) 0%, rgba(15, 11, 30, 0.96) 100%)`,
-        border: `2px solid ${primaryColor}`,
-        boxShadow: `0 0 40px ${primaryColor}80, 0 10px 30px rgba(0,0,0,0.5)`,
+        gap: '16px',
+        padding: '16px 24px',
+        borderRadius: '12px',
+        background: '#18181b',
+        border: `1px solid ${accentColor}80`,
+        boxShadow: `0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px ${accentColor}30`,
         width: '100%',
         boxSizing: 'border-box',
-        textAlign: 'center',
-        margin: '0 auto',
-        backdropFilter: 'blur(20px)',
+        color: '#ffffff',
       }}
     >
-      {/* Top Badge Icon */}
+      {/* Icon Badge */}
       <div
         style={{
-          width: '64px',
-          height: '64px',
-          borderRadius: '50%',
-          background: `linear-gradient(135deg, ${primaryColor} 0%, #06b6d4 100%)`,
+          width: '48px',
+          height: '48px',
+          borderRadius: '10px',
+          background: `${accentColor}20`,
+          border: `1px solid ${accentColor}60`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '14px',
-          boxShadow: `0 0 20px ${primaryColor}`,
+          flexShrink: 0,
         }}
       >
         {alert.type === 'subgift' ? (
-          <Gift size={32} color="#ffffff" />
+          <Gift size={24} color={accentColor} />
         ) : alert.months && alert.months > 3 ? (
-          <Crown size={32} color="#ffffff" />
+          <Crown size={24} color={accentColor} />
         ) : (
-          <Sparkles size={32} color="#ffffff" />
+          <Sparkles size={24} color={accentColor} />
         )}
       </div>
 
-      {/* Sub Header Type */}
-      <div
-        style={{
-          fontFamily: 'var(--font-heading)',
-          fontSize: '0.85rem',
-          fontWeight: 800,
-          letterSpacing: '2px',
-          color: '#06b6d4',
-          marginBottom: '4px',
-          textTransform: 'uppercase',
-        }}
-      >
-        {getSubHeader()}
-      </div>
+      {/* Content Info */}
+      <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {getSubHeader()}
+          </span>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              color: '#d4d4d8',
+            }}
+          >
+            {getTierLabel()}
+          </span>
+        </div>
 
-      {/* Subscriber Name */}
-      <div
-        style={{
-          fontFamily: 'var(--font-heading)',
-          fontSize: '2.2rem',
-          fontWeight: 900,
-          color: '#ffffff',
-          textShadow: `0 0 16px ${primaryColor}`,
-          lineHeight: 1.1,
-          marginBottom: '8px',
-        }}
-      >
-        {alert.username}
-      </div>
-
-      {/* Tier & Month Tag */}
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 14px',
-          borderRadius: '20px',
-          background: 'rgba(255, 255, 255, 0.1)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          color: '#e2e8f0',
-          marginBottom: alert.message ? '12px' : '0',
-        }}
-      >
-        <Zap size={14} color="#f59e0b" />
-        {getTierLabel()}
-      </div>
-
-      {/* Optional Subscriber Message */}
-      {alert.message && (
         <div
           style={{
-            fontStyle: 'italic',
-            color: '#cbd5e1',
-            fontSize: '0.95rem',
-            background: 'rgba(0, 0, 0, 0.3)',
-            padding: '10px 16px',
-            borderRadius: '12px',
-            borderLeft: `3px solid ${primaryColor}`,
-            marginTop: '8px',
-            width: '100%',
+            fontSize: '1.4rem',
+            fontWeight: 800,
+            color: '#ffffff',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
-          "{alert.message}"
+          {alert.username}
         </div>
-      )}
+
+        {alert.message && (
+          <div
+            style={{
+              fontSize: '0.85rem',
+              color: '#d4d4d8',
+              marginTop: '4px',
+              fontStyle: 'italic',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            "{alert.message}"
+          </div>
+        )}
+      </div>
     </div>
   );
 };

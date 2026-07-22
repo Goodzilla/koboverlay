@@ -6,6 +6,7 @@ export interface WidgetLayout {
   y: number;      // Position Y in PX (0 to 1080)
   width: number;  // Width in PX
   height: number; // Height in PX
+  visible?: boolean;
 }
 
 interface DraggableWidgetProps {
@@ -15,6 +16,9 @@ interface DraggableWidgetProps {
   defaultWidth?: number;
   defaultHeight?: number;
   isEditable: boolean;
+  isSelected?: boolean;
+  gridSnap?: boolean;
+  onSelect?: () => void;
   onLayoutChange: (newLayout: WidgetLayout) => void;
   children: React.ReactNode;
 }
@@ -26,6 +30,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   defaultWidth = 380,
   defaultHeight = 100,
   isEditable,
+  isSelected = false,
+  gridSnap = false,
+  onSelect,
   onLayoutChange,
   children,
 }) => {
@@ -41,8 +48,17 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     setCurrentLayout(layout);
   }, [layout]);
 
+  if (layout.visible === false) {
+    return null;
+  }
+
+  const snapToGrid = (val: number, gridSize = 10) => {
+    return gridSnap ? Math.round(val / gridSize) * gridSize : val;
+  };
+
   // --- DRAG HANDLERS ---
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (onSelect) onSelect();
     if (!isEditable || isResizing) return;
     e.preventDefault();
     e.stopPropagation();
@@ -71,12 +87,11 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     const deltaX = (e.clientX - startDragRef.current.mouseX) * scaleX;
     const deltaY = (e.clientY - startDragRef.current.mouseY) * scaleY;
 
-    let newX = Math.round(startDragRef.current.startX + deltaX);
-    let newY = Math.round(startDragRef.current.startY + deltaY);
+    let newX = snapToGrid(Math.round(startDragRef.current.startX + deltaX));
+    let newY = snapToGrid(Math.round(startDragRef.current.startY + deltaY));
 
-    // Keep completely inside 1920x1080 canvas bounds
-    newX = Math.max(0, Math.min(1920 - Math.min(currentLayout.width, 300), newX));
-    newY = Math.max(0, Math.min(1080 - Math.min(currentLayout.height, 100), newY));
+    newX = Math.max(0, Math.min(1920 - Math.min(currentLayout.width, 200), newX));
+    newY = Math.max(0, Math.min(1080 - Math.min(currentLayout.height, 60), newY));
 
     setCurrentLayout((prev) => ({ ...prev, x: newX, y: newY }));
   };
@@ -121,11 +136,10 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     const deltaX = (e.clientX - startResizeRef.current.mouseX) * scaleX;
     const deltaY = (e.clientY - startResizeRef.current.mouseY) * scaleY;
 
-    let newW = Math.round(startResizeRef.current.startW + deltaX);
-    let newH = Math.round(startResizeRef.current.startH + deltaY);
+    let newW = snapToGrid(Math.round(startResizeRef.current.startW + deltaX));
+    let newH = snapToGrid(Math.round(startResizeRef.current.startH + deltaY));
 
-    // Clamp min and max values to keep resize handles within reach
-    newW = Math.max(180, Math.min(1920 - currentLayout.x, newW));
+    newW = Math.max(160, Math.min(1920 - currentLayout.x, newW));
     newH = Math.max(60, Math.min(1080 - currentLayout.y, newH));
 
     setCurrentLayout((prev) => ({ ...prev, width: newW, height: newH }));
@@ -152,11 +166,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     onLayoutChange(resetLayout);
   };
 
-  // Scale calculations for stretching/shrinking content cleanly
   const scaleX = currentLayout.width / defaultWidth;
   const scaleY = currentLayout.height / defaultHeight;
 
-  // Convert 1920x1080 PX values to percentage left/top for responsive canvas rendering
   const leftPercent = (currentLayout.x / 1920) * 100;
   const topPercent = (currentLayout.y / 1080) * 100;
 
@@ -168,35 +180,31 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         left: `${leftPercent}%`,
         top: `${topPercent}%`,
         cursor: isEditable ? (isDragging ? 'grabbing' : 'grab') : 'default',
-        transition: isDragging || isResizing ? 'none' : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: isDragging || isResizing ? 100 : 10,
+        transition: isDragging || isResizing ? 'none' : 'all 0.15s ease',
+        zIndex: isSelected || isDragging || isResizing ? 100 : 10,
         userSelect: 'none',
       }}
       onMouseDown={handleMouseDown}
     >
-      {/* Interactive Edit Header (Always Accessible & Unclipped) */}
+      {/* Clean Studio Edit Header Badge */}
       {isEditable && (
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '6px',
-            background: isDragging || isResizing ? '#06b6d4' : 'rgba(124, 58, 237, 0.95)',
+            gap: '8px',
+            background: isSelected ? '#6366f1' : '#27272a',
             color: '#ffffff',
-            padding: '4px 10px',
-            borderRadius: '8px 8px 0 0',
-            fontSize: '0.75rem',
-            fontWeight: 800,
-            letterSpacing: '0.5px',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-            minWidth: '220px',
+            padding: '3px 8px',
+            borderRadius: '6px 6px 0 0',
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           }}
         >
-          {/* Label + Reset Button Group (Always on Left for Easy Reach) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Move size={12} />
+            <Move size={11} />
             <span>{label}</span>
             <button
               onClick={handleResetSize}
@@ -204,37 +212,33 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '3px',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                background: 'rgba(255, 255, 255, 0.25)',
-                border: '1px solid rgba(255, 255, 255, 0.4)',
+                padding: '1px 5px',
+                borderRadius: '4px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
                 color: '#ffffff',
-                fontSize: '0.7rem',
-                fontWeight: 800,
+                fontSize: '0.65rem',
                 cursor: 'pointer',
-                transition: 'background 0.2s',
               }}
-              title="Reset Size to Default PX"
+              title="Reset Size"
             >
-              <RotateCcw size={10} /> Reset Size
+              <RotateCcw size={9} /> Reset
             </button>
           </div>
 
-          {/* Coordinates Badge */}
-          <div style={{ fontSize: '0.7rem', opacity: 0.95, fontFamily: 'monospace' }}>
-            X:{currentLayout.x}px Y:{currentLayout.y}px ({currentLayout.width}×{currentLayout.height}px)
-          </div>
+          <span style={{ fontSize: '0.65rem', opacity: 0.85, fontFamily: 'var(--font-mono)' }}>
+            {currentLayout.x},{currentLayout.y} ({currentLayout.width}×{currentLayout.height})
+          </span>
         </div>
       )}
 
-      {/* Embedded Content Container with Dynamic Scaling */}
+      {/* Content Container */}
       <div
         style={{
           width: `${currentLayout.width}px`,
           height: `${currentLayout.height}px`,
-          border: isEditable ? `2px dashed ${isDragging || isResizing ? '#06b6d4' : '#a855f7'}` : 'none',
-          borderRadius: isEditable ? '0 0 12px 12px' : '0',
-          background: isEditable ? 'rgba(23, 17, 44, 0.4)' : 'transparent',
+          outline: isEditable ? `1px ${isSelected ? 'solid #6366f1' : 'dashed #3f3f46'}` : 'none',
+          borderRadius: isEditable ? '0 0 6px 6px' : '0',
           position: 'relative',
           boxSizing: 'border-box',
         }}
@@ -252,30 +256,24 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           {children}
         </div>
 
-        {/* Resizable Corner Handle (Always Visible inside Container Corner) */}
-        {isEditable && (
+        {/* Studio Resize Corner Handle */}
+        {isEditable && isSelected && (
           <div
             onMouseDown={handleResizeMouseDown}
             style={{
               position: 'absolute',
-              right: '4px',
-              bottom: '4px',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-              border: '2px solid #ffffff',
+              right: '-4px',
+              bottom: '-4px',
+              width: '12px',
+              height: '12px',
+              borderRadius: '2px',
+              background: '#6366f1',
+              border: '1px solid #ffffff',
               cursor: 'se-resize',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 12px rgba(6, 182, 212, 1)',
               zIndex: 150,
             }}
-            title="Click and drag to resize width & height (in PX)"
-          >
-            <Maximize2 size={12} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
-          </div>
+            title="Drag to resize"
+          />
         )}
       </div>
     </div>

@@ -1,66 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { createOverlaySocket } from '../utils/socket';
+import { useHistory } from '../utils/useHistory';
+import { StudioToolbar } from '../components/StudioToolbar';
+import { LayerTree, LayerItem } from '../components/LayerTree';
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
 import { DraggableWidget, WidgetLayout } from '../components/DraggableWidget';
 import {
-  Radio,
-  Copy,
-  Check,
-  Play,
-  Settings,
-  Sparkles,
-  Zap,
-  Gift,
-  ExternalLink,
+  Layers,
   Sliders,
+  Play,
+  Zap,
+  Sparkles,
+  Gift,
   Tv,
-  Move,
-  Lock,
-  Unlock,
   RotateCcw,
-  Maximize2,
+  Check,
 } from 'lucide-react';
 
-interface LayoutState {
-  subGoal: WidgetLayout;
-  subAlert: WidgetLayout;
+export interface StudioState {
+  primaryColor: string;
+  alertDuration: number;
+  goalTitle: string;
+  currentSubs: number;
+  targetSubs: number;
+  layouts: {
+    subGoal: WidgetLayout;
+    subAlert: WidgetLayout;
+  };
 }
 
-const DEFAULT_LAYOUT: LayoutState = {
-  subGoal: { x: 1300, y: 40, width: 380, height: 100 },
-  subAlert: { x: 700, y: 380, width: 520, height: 260 },
+const DEFAULT_STUDIO_STATE: StudioState = {
+  primaryColor: '#6366f1',
+  alertDuration: 5000,
+  goalTitle: 'Monthly Sub Goal',
+  currentSubs: 14,
+  targetSubs: 50,
+  layouts: {
+    subGoal: { x: 1300, y: 40, width: 380, height: 100, visible: true },
+    subAlert: { x: 700, y: 380, width: 520, height: 260, visible: true },
+  },
 };
 
 export const Dashboard: React.FC = () => {
   const [token] = useState<string>('demo-streamer-token');
-  const [copied, setCopied] = useState(false);
-  const [connected, setConnected] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [connected, setConnected] = useState(false);
 
-  // Overlay Settings
-  const [primaryColor, setPrimaryColor] = useState('#7c3aed');
-  const [alertDuration, setAlertDuration] = useState(5000);
-  const [goalTitle, setGoalTitle] = useState('Monthly Sub Goal');
-  const [currentSubs, setCurrentSubs] = useState(14);
-  const [targetSubs, setTargetSubs] = useState(50);
+  // Active Sidebar Tab: 'layers' | 'properties' | 'simulator'
+  const [activeTab, setActiveTab] = useState<'layers' | 'properties' | 'simulator'>('layers');
+  const [selectedLayerId, setSelectedLayerId] = useState<'subGoal' | 'subAlert' | null>('subGoal');
+  const [gridSnap, setGridSnap] = useState(true);
 
-  // Interactive Layout Positioning State (in PX)
-  const [isEditMode, setIsEditMode] = useState(true);
-  const [layout, setLayout] = useState<LayoutState>(() => {
-    const saved = localStorage.getItem(`streampulse_layout_px_${token}`);
-    return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
-  });
+  // History Stack Engine (Ctrl+Z and Ctrl+Shift+Z)
+  const getInitialState = (): StudioState => {
+    const saved = localStorage.getItem(`streampulse_studio_${token}`);
+    return saved ? JSON.parse(saved) : DEFAULT_STUDIO_STATE;
+  };
 
-  // Active Preview Alert State
+  const history = useHistory<StudioState>(getInitialState());
+
+  const { state, set: setStudioState, undo, redo, canUndo, canRedo, historyLength } = history;
+
+  // Active Preview Alert
   const [previewAlert, setPreviewAlert] = useState<AlertData | null>({
     id: 'demo-alert',
     type: 'sub',
     username: 'DemoGamer',
     tier: '1000',
     durationMs: 999999,
-    primaryColor: '#7c3aed',
+    primaryColor: state.primaryColor,
   });
 
   useEffect(() => {
@@ -82,38 +92,48 @@ export const Dashboard: React.FC = () => {
     };
   }, [token]);
 
-  const overlayUrl = `${window.location.origin}/overlay/${token}`;
+  // Sync state changes with localStorage & WebSockets
+  useEffect(() => {
+    localStorage.setItem(`streampulse_studio_${token}`, JSON.stringify(state));
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(overlayUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    if (socket && connected) {
+      socket.emit('update-layout', { token, layout: state.layouts });
+    }
+  }, [state, socket, connected, token]);
 
+  // Layout position & size update handler
   const handleLayoutChange = (widgetId: 'subGoal' | 'subAlert', newLayout: WidgetLayout) => {
-    const updatedLayout = {
-      ...layout,
-      [widgetId]: newLayout,
-    };
-    setLayout(updatedLayout);
-
-    // Save locally with PX coordinates
-    localStorage.setItem(`streampulse_layout_px_${token}`, JSON.stringify(updatedLayout));
-
-    // Broadcast live over WebSockets to OBS Studio!
-    if (socket && connected) {
-      socket.emit('update-layout', { token, layout: updatedLayout });
-    }
+    setStudioState((prev) => ({
+      ...prev,
+      layouts: {
+        ...prev.layouts,
+        [widgetId]: newLayout,
+      },
+    }));
   };
 
-  const resetLayout = () => {
-    setLayout(DEFAULT_LAYOUT);
-    localStorage.setItem(`streampulse_layout_px_${token}`, JSON.stringify(DEFAULT_LAYOUT));
-    if (socket && connected) {
-      socket.emit('update-layout', { token, layout: DEFAULT_LAYOUT });
-    }
+  // Toggle Layer Visibility
+  const handleToggleVisibility = (widgetId: 'subGoal' | 'subAlert') => {
+    setStudioState((prev) => {
+      const current = prev.layouts[widgetId];
+      return {
+        ...prev,
+        layouts: {
+          ...prev.layouts,
+          [widgetId]: {
+            ...current,
+            visible: current.visible === false ? true : false,
+          },
+        },
+      };
+    });
   };
 
+  const handleResetAllLayouts = () => {
+    setStudioState(DEFAULT_STUDIO_STATE);
+  };
+
+  // Trigger Simulated Sub Alert
   const triggerTestAlert = (type: 'sub' | 'resub' | 'subgift', tier: 'Prime' | '1000' | '2000' | '3000') => {
     const usernames = ['PixelNinja', 'CyberKnight', 'NeonStreamer', 'VortexPro', 'AuraGamer'];
     const randomUser = usernames[Math.floor(Math.random() * usernames.length)];
@@ -125,8 +145,8 @@ export const Dashboard: React.FC = () => {
       tier,
       months: randomMonths,
       message: type === 'resub' ? 'Loving the stream! Keep up the epic work 🔥' : undefined,
-      durationMs: alertDuration,
-      primaryColor,
+      durationMs: state.alertDuration,
+      primaryColor: state.primaryColor,
     };
 
     if (socket && connected) {
@@ -140,266 +160,329 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleIncrementSubGoal = () => {
-    const newCount = currentSubs + 1;
-    setCurrentSubs(newCount);
+    const newCount = state.currentSubs + 1;
+    setStudioState((prev) => ({ ...prev, currentSubs: newCount }));
 
     if (socket && connected) {
       socket.emit('update-sub-goal', {
         token,
-        title: goalTitle,
+        title: state.goalTitle,
         currentSubs: newCount,
-        targetSubs,
+        targetSubs: state.targetSubs,
       });
     }
   };
 
-  return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 20px' }}>
-      {/* Top Header */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '28px',
-          paddingBottom: '20px',
-          borderBottom: '1px solid rgba(124, 58, 237, 0.2)',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Tv size={32} color="#a855f7" />
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', fontWeight: 900 }} className="gradient-text">
-              StreamPulse
-            </h1>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                padding: '3px 10px',
-                borderRadius: '12px',
-                background: 'rgba(124, 58, 237, 0.2)',
-                border: '1px solid rgba(124, 58, 237, 0.4)',
-                color: '#c084fc',
-              }}
-            >
-              PX LAYOUT & RESIZE ENGINE
-            </span>
-          </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '4px' }}>
-            Real-time OBS Overlay Engine with Pixel (PX) Positioning & Dynamic Resizing
-          </p>
-        </div>
+  const layers: LayerItem[] = [
+    { id: 'subGoal', label: 'Sub Goal Bar', type: 'goal', layout: state.layouts.subGoal },
+    { id: 'subAlert', label: 'Sub Alert Popup', type: 'alert', layout: state.layouts.subAlert },
+  ];
 
-        {/* Server Connection Badge */}
-        <div
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+      {/* Top Toolbar */}
+      <StudioToolbar
+        token={token}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        gridSnap={gridSnap}
+        historyLength={historyLength}
+        onUndo={undo}
+        onRedo={redo}
+        onToggleGridSnap={() => setGridSnap(!gridSnap)}
+        onResetAllLayouts={handleResetAllLayouts}
+      />
+
+      {/* Main Studio Workspace Split */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Left Sidebar Panel */}
+        <aside
           style={{
+            width: '320px',
+            background: '#121215',
+            borderRight: '1px solid #27272a',
             display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            background: connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-            border: `1px solid ${connected ? '#10b981' : '#ef4444'}`,
-            fontSize: '0.85rem',
-            fontWeight: 700,
-            color: connected ? '#10b981' : '#ef4444',
+            flexDirection: 'column',
+            flexShrink: 0,
+            userSelect: 'none',
           }}
         >
-          <Radio size={16} className={connected ? 'animate-pulse' : ''} />
-          {connected ? 'SOCKET ENGINE LIVE' : 'OFFLINE MODE'}
-        </div>
-      </header>
+          {/* Navigation Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #27272a', background: '#09090b' }}>
+            <button
+              onClick={() => setActiveTab('layers')}
+              style={{
+                flex: 1,
+                padding: '10px 0',
+                background: activeTab === 'layers' ? '#121215' : 'transparent',
+                border: 'none',
+                borderBottom: activeTab === 'layers' ? '2px solid #6366f1' : 'none',
+                color: activeTab === 'layers' ? '#ffffff' : '#71717a',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <Layers size={14} /> Layers
+            </button>
 
-      {/* OBS URL Banner */}
-      <section className="glass-panel" style={{ padding: '20px 24px', marginBottom: '28px' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={20} color="#06b6d4" />
-          Your OBS Studio Browser Source Link
-        </h2>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <input type="text" readOnly value={overlayUrl} className="input-field" style={{ fontFamily: 'monospace' }} />
-          <button className="btn btn-primary" onClick={handleCopyUrl}>
-            {copied ? <Check size={18} /> : <Copy size={18} />}
-            {copied ? 'Copied!' : 'Copy URL'}
-          </button>
-          <a
-            href={overlayUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-secondary"
-            style={{ textDecoration: 'none' }}
-          >
-            <ExternalLink size={18} />
-            Test Window
-          </a>
-        </div>
-      </section>
+            <button
+              onClick={() => setActiveTab('properties')}
+              style={{
+                flex: 1,
+                padding: '10px 0',
+                background: activeTab === 'properties' ? '#121215' : 'transparent',
+                border: 'none',
+                borderBottom: activeTab === 'properties' ? '2px solid #6366f1' : 'none',
+                color: activeTab === 'properties' ? '#ffffff' : '#71717a',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <Sliders size={14} /> Properties
+            </button>
 
-      {/* Main Grid: Left Controls & Right Resizable Canvas */}
-      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '28px' }}>
-        {/* Left Column: Test Event Simulator & Customization */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Test Event Simulator */}
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Play size={20} color="#a855f7" />
-              Test Event Simulator
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <button className="btn btn-primary" onClick={() => triggerTestAlert('sub', '1000')}>
-                <Zap size={16} /> Tier 1 Sub
-              </button>
-              <button className="btn btn-accent" onClick={() => triggerTestAlert('sub', 'Prime')}>
-                <Sparkles size={16} /> Prime Sub
-              </button>
-              <button className="btn btn-secondary" onClick={() => triggerTestAlert('resub', '2000')}>
-                <Zap size={16} /> 6-Mo Resub
-              </button>
-              <button className="btn btn-secondary" onClick={() => triggerTestAlert('subgift', '1000')}>
-                <Gift size={16} /> Gift Sub
-              </button>
-            </div>
-
-            <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <button
-                className="btn btn-primary"
-                style={{ width: '100%', background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)' }}
-                onClick={handleIncrementSubGoal}
-              >
-                +1 Increment Sub Goal ({currentSubs}/{targetSubs})
-              </button>
-            </div>
+            <button
+              onClick={() => setActiveTab('simulator')}
+              style={{
+                flex: 1,
+                padding: '10px 0',
+                background: activeTab === 'simulator' ? '#121215' : 'transparent',
+                border: 'none',
+                borderBottom: activeTab === 'simulator' ? '2px solid #6366f1' : 'none',
+                color: activeTab === 'simulator' ? '#ffffff' : '#71717a',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <Play size={14} /> Test
+            </button>
           </div>
 
-          {/* Visual Customization */}
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sliders size={20} color="#ec4899" />
-              Visual Settings
-            </h2>
+          {/* Sidebar Tab Content */}
+          <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+            {/* Tab 1: Layer Tree */}
+            {activeTab === 'layers' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <LayerTree
+                  layers={layers}
+                  selectedLayerId={selectedLayerId}
+                  onSelectLayer={(id) => setSelectedLayerId(id)}
+                  onToggleVisibility={handleToggleVisibility}
+                />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  Primary Accent Glow Color
-                </label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div style={{ borderTop: '1px solid #27272a', paddingTop: '16px' }}>
+                  <button className="studio-btn" onClick={handleResetAllLayouts} style={{ width: '100%' }}>
+                    <RotateCcw size={14} /> Reset Layout Positions
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Properties Inspector */}
+            {activeTab === 'properties' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a1a1aa' }}>Visual Inspector</div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
+                    Accent Highlight Color
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="color"
+                      value={state.primaryColor}
+                      onChange={(e) => setStudioState((prev) => ({ ...prev, primaryColor: e.target.value }))}
+                      style={{ width: '36px', height: '32px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      value={state.primaryColor}
+                      onChange={(e) => setStudioState((prev) => ({ ...prev, primaryColor: e.target.value }))}
+                      className="studio-input"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
+                    Sub Goal Title
+                  </label>
                   <input
-                    type="color"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    style={{ width: '44px', height: '36px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+                    type="text"
+                    value={state.goalTitle}
+                    onChange={(e) => setStudioState((prev) => ({ ...prev, goalTitle: e.target.value }))}
+                    className="studio-input"
                   />
-                  <input type="text" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="input-field" />
                 </div>
-              </div>
 
-              <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  Sub Goal Title
-                </label>
-                <input type="text" value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} className="input-field" />
-              </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
+                      Current Subs
+                    </label>
+                    <input
+                      type="number"
+                      value={state.currentSubs}
+                      onChange={(e) => setStudioState((prev) => ({ ...prev, currentSubs: Number(e.target.value) }))}
+                      className="studio-input"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
+                      Target Subs
+                    </label>
+                    <input
+                      type="number"
+                      value={state.targetSubs}
+                      onChange={(e) => setStudioState((prev) => ({ ...prev, targetSubs: Number(e.target.value) }))}
+                      className="studio-input"
+                    />
+                  </div>
+                </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 700, display: 'block', marginBottom: '4px' }}>Current</label>
-                  <input type="number" value={currentSubs} onChange={(e) => setCurrentSubs(Number(e.target.value))} className="input-field" />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 700, display: 'block', marginBottom: '4px' }}>Target</label>
-                  <input type="number" value={targetSubs} onChange={(e) => setTargetSubs(Number(e.target.value))} className="input-field" />
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
+                    Alert Duration ({state.alertDuration / 1000}s)
+                  </label>
+                  <input
+                    type="range"
+                    min={2000}
+                    max={10000}
+                    step={500}
+                    value={state.alertDuration}
+                    onChange={(e) => setStudioState((prev) => ({ ...prev, alertDuration: Number(e.target.value) }))}
+                    style={{ width: '100%', accentColor: '#6366f1' }}
+                  />
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Tab 3: Test Event Simulator */}
+            {activeTab === 'simulator' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a1a1aa' }}>Test Event Triggers</div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button className="studio-btn studio-btn-primary" onClick={() => triggerTestAlert('sub', '1000')}>
+                    <Zap size={14} /> Test Tier 1 Sub
+                  </button>
+                  <button className="studio-btn" onClick={() => triggerTestAlert('sub', 'Prime')}>
+                    <Sparkles size={14} /> Test Prime Sub
+                  </button>
+                  <button className="studio-btn" onClick={() => triggerTestAlert('resub', '2000')}>
+                    <Zap size={14} /> Test 6-Month Resub
+                  </button>
+                  <button className="studio-btn" onClick={() => triggerTestAlert('subgift', '1000')}>
+                    <Gift size={14} /> Test Gift Sub
+                  </button>
+                </div>
+
+                <div style={{ borderTop: '1px solid #27272a', paddingTop: '12px' }}>
+                  <button className="studio-btn studio-btn-active" onClick={handleIncrementSubGoal} style={{ width: '100%' }}>
+                    +1 Sub Goal ({state.currentSubs}/{state.targetSubs})
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </aside>
 
-        {/* Right Column: Interactive Resizable & Draggable Canvas in PX */}
-        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Maximize2 size={20} color="#06b6d4" />
-              Interactive PX Canvas (Drag & Resize)
-            </h2>
-
-            {/* Edit / Lock Controls */}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="btn btn-secondary" onClick={resetLayout} title="Reset to Default PX Positions">
-                <RotateCcw size={16} /> Reset
-              </button>
-              <button
-                className={`btn ${isEditMode ? 'btn-accent' : 'btn-secondary'}`}
-                onClick={() => setIsEditMode(!isEditMode)}
-              >
-                {isEditMode ? <Unlock size={16} /> : <Lock size={16} />}
-                {isEditMode ? 'Edit & Resize ON' : 'Locked Mode'}
-              </button>
-            </div>
-          </div>
-
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '16px' }}>
-            💡 <strong>Drag elements</strong> to move (in PX) and <strong>drag bottom-right handle</strong> to resize width/height. Positions are saved automatically and synced live to OBS!
-          </p>
-
-          {/* Interactive 1920x1080 Simulated Canvas */}
+        {/* Main Canvas Viewport (Scales Maximized to Screen Height) */}
+        <main
+          className="canvas-grid-bg"
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Scaled 1920x1080 Work Area */}
           <div
             style={{
-              flex: 1,
-              minHeight: '480px',
-              borderRadius: '16px',
-              background: 'radial-gradient(circle at center, #1e173b 0%, #0a0714 100%)',
-              border: `2px ${isEditMode ? 'dashed #a855f7' : 'solid rgba(255,255,255,0.1)'}`,
+              width: '100%',
+              maxHeight: '100%',
+              aspectRatio: '16 / 9',
+              background: '#09090b',
+              border: '1px solid #27272a',
+              borderRadius: '8px',
               position: 'relative',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
               overflow: 'hidden',
-              boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8)',
             }}
           >
-            {/* Draggable & Resizable Sub Goal Widget */}
+            {/* Sub Goal Draggable Widget */}
             <DraggableWidget
               id="subGoal"
               label="Sub Goal Bar"
-              layout={layout.subGoal}
+              layout={state.layouts.subGoal}
               defaultWidth={380}
               defaultHeight={100}
-              isEditable={isEditMode}
+              isEditable={true}
+              isSelected={selectedLayerId === 'subGoal'}
+              gridSnap={gridSnap}
+              onSelect={() => setSelectedLayerId('subGoal')}
               onLayoutChange={(newLayout) => handleLayoutChange('subGoal', newLayout)}
             >
-              <SubGoalWidget title={goalTitle} currentSubs={currentSubs} targetSubs={targetSubs} primaryColor={primaryColor} />
+              <SubGoalWidget
+                title={state.goalTitle}
+                currentSubs={state.currentSubs}
+                targetSubs={state.targetSubs}
+                primaryColor={state.primaryColor}
+              />
             </DraggableWidget>
 
-            {/* Draggable & Resizable Sub Alert Widget */}
+            {/* Sub Alert Draggable Widget */}
             <DraggableWidget
               id="subAlert"
               label="Sub Alert Popup"
-              layout={layout.subAlert}
+              layout={state.layouts.subAlert}
               defaultWidth={520}
               defaultHeight={260}
-              isEditable={isEditMode}
+              isEditable={true}
+              isSelected={selectedLayerId === 'subAlert'}
+              gridSnap={gridSnap}
+              onSelect={() => setSelectedLayerId('subAlert')}
               onLayoutChange={(newLayout) => handleLayoutChange('subAlert', newLayout)}
             >
               <SubAlertWidget alert={previewAlert} />
             </DraggableWidget>
 
-            {/* Canvas Badge */}
+            {/* Viewport Specs Footer Badge */}
             <div
               style={{
                 position: 'absolute',
-                bottom: '12px',
-                right: '16px',
-                fontSize: '0.7rem',
-                fontWeight: 800,
-                color: '#64748b',
-                letterSpacing: '1px',
+                bottom: '10px',
+                right: '12px',
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: '#52525b',
+                fontFamily: 'var(--font-mono)',
                 pointerEvents: 'none',
               }}
             >
-              OBS RESOLUTION 1920x1080 PX • LIVE WEBSOCKET SYNC
+              1920×1080 CANVAS • CTRL+Z UNDO READY
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
