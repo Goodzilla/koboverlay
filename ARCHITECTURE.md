@@ -1,30 +1,30 @@
-# 🏗️ StreamPulse Technical Architecture & AI Developer Context
+# KobOverlay Technical Architecture & Developer Context
 
-This document describes the technical architecture, real-time socket protocol, data schemas, and state synchronization flow for **StreamPulse**. It serves as an authoritative guide for AI coding assistants and human developers alike.
-
----
-
-## 🛰️ High-Level System Architecture
-
-```
-                               ┌────────────────────────────────┐
-                               │   Streamer Dashboard (React)   │
-                               └──────────────┬─────────────────┘
-                                              │ REST / WebSocket (Test Events)
-                                              ▼
-┌──────────────────────┐  EventSub   ┌────────────────────────────────┐
-│   Twitch API / IRC   ├────────────►│  Express + Socket.io Server    │
-└──────────────────────┘             └──────────────┬─────────────────┘
-                                                    │ Socket.io ('alert-trigger')
-                                                    ▼
-                               ┌────────────────────────────────┐
-                               │   OBS Browser Overlay (React)  │
-                               └────────────────────────────────┘
-```
+This document describes the technical architecture, real-time socket protocol, data schemas, and state synchronization flow for **KobOverlay**. It serves as an authoritative guide for AI coding assistants and human developers alike.
 
 ---
 
-## 📡 Socket.io Real-Time Protocol
+## High-Level System Architecture
+
+```
+                               +--------------------------------+
+                               |   Streamer Dashboard (React)   |
+                               +---------------+----------------+
+                                               | REST / WebSocket (Test Events)
+                                               v
++----------------------+  EventSub   +--------------------------------+
+|   Twitch API / IRC   +------------>|  Express + Socket.io Server    |
++----------------------+             +---------------+----------------+
+                                                     | Socket.io ('alert-trigger')
+                                                     v
+                               +--------------------------------+
+                               |   OBS Browser Overlay (React)  |
+                               +--------------------------------+
+```
+
+---
+
+## Socket.io Real-Time Protocol
 
 Client overlay instances join isolated room channels based on their unique `overlayToken`:
 
@@ -39,10 +39,11 @@ Client overlay instances join isolated room channels based on their unique `over
 ```typescript
 interface AlertEvent {
   id: string;
-  type: 'sub' | 'resub' | 'subgift';
+  type: 'sub' | 'resub' | 'subgift' | 'bits' | 'raid';
   username: string;
   tier: 'Prime' | '1000' | '2000' | '3000';
   months?: number;
+  amount?: number;
   message?: string;
   durationMs: number;
   primaryColor: string;
@@ -62,7 +63,7 @@ interface SubGoalUpdate {
 
 ---
 
-## 📦 Database Schema (Prisma)
+## Database Schema (Prisma)
 
 - **`User`**: Represents the streamer account. Holds `overlayToken` (UUID) and Twitch channel metadata.
 - **`OverlayConfig`**: Configuration settings for the overlay (colors, animation speeds, sound preferences, sub goal title, target subs, current subs).
@@ -70,7 +71,7 @@ interface SubGoalUpdate {
 
 ---
 
-## 🧠 State Synchronization & Queue Management
+## State Synchronization & Queue Management
 
 The OBS Overlay Client maintains an internal **Alert Queue Service**:
 1. Incoming `trigger-alert` events are pushed to an array queue.

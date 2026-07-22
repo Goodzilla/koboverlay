@@ -1,12 +1,12 @@
-# Contributing to StreamPulse 🤝
+# Contributing to KobOverlay
 
-Thank you for your interest in contributing to StreamPulse! We welcome contributions from developers, designers, and streamers of all experience levels.
+Thank you for your interest in contributing to KobOverlay. Contributions from developers, designers, and streamers of all experience levels are welcome.
 
 ---
 
-## 🛠️ Project Structure
+## Project Structure
 
-StreamPulse is structured as a full-stack monorepo:
+KobOverlay is structured as a full-stack monorepo:
 
 ```
 /
@@ -25,18 +25,19 @@ StreamPulse is structured as a full-stack monorepo:
 
 ---
 
-## 📋 Rules for Contributions & AI Coding Assistants
+## Rules for Contributions & AI Coding Assistants
 
 When adding features or submitting pull requests:
 1. **Always write unit tests** for new socket events, API endpoints, or React widgets (`npm test`).
 2. **Keep overlay components lightweight** and free of heavy external dependencies to preserve low OBS CPU usage.
 3. **Preserve dynamic CSS keyframes & glassmorphic styling**. Avoid bloated third-party CSS libraries.
 4. **Update `ARCHITECTURE.md`** whenever modifying server-client event protocols or database models.
-5. Ensure code builds cleanly without TypeScript or linter errors before committing.
+5. **All UI text and documentation must be written in 100% English** at all times.
+6. Ensure code builds cleanly without TypeScript errors before committing.
 
 ---
 
-## 🧪 Running Tests
+## Running Tests
 
 ### Backend Server Tests
 ```bash
@@ -52,9 +53,9 @@ npm test
 
 ---
 
-## 🔁 Git Commit & Workflow
+## Git Commit & Workflow
 
 1. Create a feature branch: `git checkout -b feature/my-cool-alert`
 2. Run test suites to ensure clean passage.
 3. Commit with clear messages: `git commit -m "feat(overlay): add wheel spin trigger"`
-4. Submit a Pull Request!
+4. Submit a Pull Request.
