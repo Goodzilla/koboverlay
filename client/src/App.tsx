@@ -1,15 +1,20 @@
 import React from 'react';
+import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
 import { Overlay } from './pages/Overlay';
 
 export const App: React.FC = () => {
-  const isOverlayPath = window.location.pathname.startsWith('/overlay');
+  const path = window.location.pathname;
 
-  if (isOverlayPath) {
+  if (path.startsWith('/overlay')) {
     return <Overlay />;
   }
 
-  return <Dashboard />;
+  if (path.startsWith('/studio')) {
+    return <Dashboard />;
+  }
+
+  return <Landing />;
 };
 
 export default App;

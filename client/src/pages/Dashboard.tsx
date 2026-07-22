@@ -59,7 +59,16 @@ const DEFAULT_STUDIO_STATE: StudioState = {
 };
 
 export const Dashboard: React.FC = () => {
-  const [token] = useState<string>('demo-streamer-token');
+  // Extract token from URL search query parameter (e.g. /studio?token=XYZ) or path
+  const [token] = useState<string>(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryToken = urlParams.get('token');
+    if (queryToken) return queryToken;
+
+    const pathParts = window.location.pathname.split('/');
+    const pathToken = pathParts[pathParts.length - 1];
+    return pathToken && pathToken !== 'studio' ? pathToken : 'demo-streamer-token';
+  });
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 
