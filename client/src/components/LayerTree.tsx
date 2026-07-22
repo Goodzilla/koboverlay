@@ -26,6 +26,8 @@ export interface WidgetInstance {
     imageUrl?: string;
     primaryColor?: string;
     backgroundColor?: string;
+    textColor?: string;
+    fontSize?: number;
     borderRadius?: number;
     currentSubs?: number;
     targetSubs?: number;
@@ -218,10 +220,53 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       />
                     </div>
 
+                    {/* Text Color & Font Size Controls */}
+                    {widget.type !== 'customImage' && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                            Text Color
+                          </label>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input
+                              type="color"
+                              value={widget.config.textColor || '#ffffff'}
+                              onChange={(e) => onUpdateWidgetConfig(widget.id, { textColor: e.target.value })}
+                              style={{ width: '28px', height: '26px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                            />
+                            <input
+                              type="text"
+                              value={widget.config.textColor || '#ffffff'}
+                              onChange={(e) => onUpdateWidgetConfig(widget.id, { textColor: e.target.value })}
+                              className="studio-input"
+                              style={{ fontSize: '0.75rem' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Font Size</label>
+                            <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
+                              {widget.config.fontSize || (widget.type === 'subAlert' ? 18 : 14)}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="36"
+                            value={widget.config.fontSize || (widget.type === 'subAlert' ? 18 : 14)}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { fontSize: Number(e.target.value) })}
+                            style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Image / GIF Upload & Media URL */}
                     <div>
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                        {widget.type === 'subGoal' ? 'Custom Icon / Badge (Upload or Link)' : 'Custom Media / GIF (Upload or Link)'}
+                        {widget.type === 'subGoal' ? 'Optional Custom Icon (Upload or Link)' : 'Custom Media / GIF (Upload or Link)'}
                       </label>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <input

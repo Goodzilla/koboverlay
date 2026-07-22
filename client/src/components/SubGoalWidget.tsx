@@ -1,5 +1,4 @@
 import React from 'react';
-import { Target } from 'lucide-react';
 
 interface SubGoalWidgetProps {
   title?: string;
@@ -7,6 +6,8 @@ interface SubGoalWidgetProps {
   targetSubs: number;
   primaryColor?: string;
   backgroundColor?: string;
+  textColor?: string;
+  fontSize?: number;
   borderRadius?: number;
   imageUrl?: string;
 }
@@ -17,6 +18,8 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
   targetSubs,
   primaryColor = '#6366f1',
   backgroundColor = '#18181b',
+  textColor = '#ffffff',
+  fontSize = 14,
   borderRadius = 10,
   imageUrl,
 }) => {
@@ -37,22 +40,20 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        color: '#ffffff',
+        color: textColor,
       }}
     >
       {/* Header Info */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {imageUrl ? (
-            <img src={imageUrl} alt="Icon" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-          ) : (
-            <Target size={16} color={primaryColor} />
+          {imageUrl && (
+            <img src={imageUrl} alt="Icon" style={{ width: `${fontSize + 4}px`, height: `${fontSize + 4}px`, objectFit: 'contain' }} />
           )}
-          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f4f4f5' }}>{title}</span>
+          <span style={{ fontWeight: 700, fontSize: `${fontSize}px`, color: textColor }}>{title}</span>
         </div>
 
-        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#a1a1aa', fontFamily: 'var(--font-mono)' }}>
-          <span style={{ color: '#ffffff' }}>{currentSubs}</span> / <span>{targetSubs}</span> ({percentage}%)
+        <div style={{ fontSize: `${Math.max(11, fontSize - 2)}px`, fontWeight: 700, color: textColor, opacity: 0.9, fontFamily: 'var(--font-mono)' }}>
+          <span>{currentSubs}</span> / <span>{targetSubs}</span> ({percentage}%)
         </div>
       </div>
 

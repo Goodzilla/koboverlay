@@ -178,6 +178,8 @@ export const Overlay: React.FC = () => {
                 targetSubs={widget.config.targetSubs || 50}
                 primaryColor={widget.config.primaryColor || '#6366f1'}
                 backgroundColor={widget.config.backgroundColor || '#18181b'}
+                textColor={widget.config.textColor}
+                fontSize={widget.config.fontSize}
                 borderRadius={widget.config.borderRadius}
                 imageUrl={widget.config.imageUrl}
               />
@@ -191,6 +193,8 @@ export const Overlay: React.FC = () => {
                         ...currentAlert,
                         primaryColor: widget.config.primaryColor || currentAlert.primaryColor,
                         backgroundColor: widget.config.backgroundColor || '#18181b',
+                        textColor: widget.config.textColor,
+                        fontSize: widget.config.fontSize,
                         borderRadius: widget.config.borderRadius,
                         imageUrl: widget.config.imageUrl || currentAlert.imageUrl,
                         customTextTemplate: widget.config.customTextTemplate,

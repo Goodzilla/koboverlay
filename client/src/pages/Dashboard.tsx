@@ -484,6 +484,8 @@ export const Dashboard: React.FC = () => {
                       targetSubs={widget.config.targetSubs || 50}
                       primaryColor={widget.config.primaryColor || '#6366f1'}
                       backgroundColor={widget.config.backgroundColor || '#18181b'}
+                      textColor={widget.config.textColor}
+                      fontSize={widget.config.fontSize}
                       borderRadius={widget.config.borderRadius}
                       imageUrl={widget.config.imageUrl}
                     />
@@ -497,6 +499,8 @@ export const Dashboard: React.FC = () => {
                               ...previewAlert,
                               primaryColor: widget.config.primaryColor || previewAlert.primaryColor,
                               backgroundColor: widget.config.backgroundColor || '#18181b',
+                              textColor: widget.config.textColor,
+                              fontSize: widget.config.fontSize,
                               borderRadius: widget.config.borderRadius,
                               imageUrl: widget.config.imageUrl,
                               customTextTemplate: widget.config.customTextTemplate,

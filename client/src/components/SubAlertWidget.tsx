@@ -11,6 +11,8 @@ export interface AlertData {
   durationMs?: number;
   primaryColor?: string;
   backgroundColor?: string;
+  textColor?: string;
+  fontSize?: number;
   borderRadius?: number;
   imageUrl?: string;
   customTextTemplate?: string;
@@ -51,6 +53,8 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
 
   const accentColor = alert.primaryColor || '#38bdf8';
   const bgColor = alert.backgroundColor || '#18181b';
+  const txtColor = alert.textColor || '#ffffff';
+  const fSize = alert.fontSize || 18;
   const radius = alert.borderRadius !== undefined ? alert.borderRadius : 12;
 
   const getTierLabel = () => {
@@ -92,14 +96,14 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        color: '#ffffff',
+        color: txtColor,
       }}
     >
       {/* Custom Media / Badge Icon */}
       <div
         style={{
-          width: '48px',
-          height: '48px',
+          width: `${fSize * 2.4}px`,
+          height: `${fSize * 2.4}px`,
           borderRadius: `${Math.max(4, radius - 4)}px`,
           background: `${accentColor}20`,
           border: `1px solid ${accentColor}60`,
@@ -113,22 +117,22 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
         {alert.imageUrl ? (
           <img src={alert.imageUrl} alt="Alert Media" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : alert.type === 'subgift' ? (
-          <Gift size={24} color={accentColor} />
+          <Gift size={fSize * 1.3} color={accentColor} />
         ) : alert.months && alert.months > 3 ? (
-          <Crown size={24} color={accentColor} />
+          <Crown size={fSize * 1.3} color={accentColor} />
         ) : (
-          <Sparkles size={24} color={accentColor} />
+          <Sparkles size={fSize * 1.3} color={accentColor} />
         )}
       </div>
 
       {/* Content Info */}
       <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
-        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: `${fSize}px`, fontWeight: 800, color: txtColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {getFormattedMessage()}
         </div>
 
         {alert.message && (
-          <div style={{ fontSize: '0.78rem', color: '#a1a1aa', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: `${Math.max(11, fSize - 6)}px`, color: txtColor, opacity: 0.8, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             "{alert.message}"
           </div>
         )}
