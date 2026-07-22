@@ -292,22 +292,45 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       </div>
                     )}
 
-                    {/* Sub Alert Dynamic Text Template */}
-                    {widget.type === 'subAlert' && (
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', display: 'block', marginBottom: '4px' }}>
-                          Alert Text Template ({'{username}'}, {'{amount}'}, {'{months}'}, {'{tier}'})
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="{username} gifted {amount} subs ({tier})"
-                          value={widget.config.customTextTemplate || ''}
-                          onChange={(e) => onUpdateWidgetConfig(widget.id, { customTextTemplate: e.target.value })}
-                          className="studio-input"
-                          style={{ fontSize: '0.75rem' }}
-                        />
-                      </div>
-                    )}
+                    {/* Sub Alert Dynamic Text Template (Context-Aware Variables & Placeholder) */}
+                    {widget.type === 'subAlert' && (() => {
+                      const evtType = widget.config.triggerEventType || 'all';
+                      let varsText = '{username}, {amount}, {months}, {tier}';
+                      let placeholderText = '{username} subscribed for {months} months ({tier})';
+
+                      if (evtType === 'raid') {
+                        varsText = '{username}, {amount}';
+                        placeholderText = '{username} raided with {amount} viewers!';
+                      } else if (evtType === 'bits') {
+                        varsText = '{username}, {amount}';
+                        placeholderText = '{username} cheered {amount} Bits!';
+                      } else if (evtType === 'subgift') {
+                        varsText = '{username}, {amount}, {tier}';
+                        placeholderText = '{username} gifted {amount} subs ({tier})';
+                      } else if (evtType === 'resub') {
+                        varsText = '{username}, {months}, {tier}';
+                        placeholderText = '{username} subscribed for {months} months ({tier})';
+                      } else if (evtType === 'sub') {
+                        varsText = '{username}, {tier}';
+                        placeholderText = '{username} subscribed ({tier})';
+                      }
+
+                      return (
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', display: 'block', marginBottom: '4px' }}>
+                            Alert Text Template ({varsText})
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={placeholderText}
+                            value={widget.config.customTextTemplate || ''}
+                            onChange={(e) => onUpdateWidgetConfig(widget.id, { customTextTemplate: e.target.value })}
+                            className="studio-input"
+                            style={{ fontSize: '0.75rem' }}
+                          />
+                        </div>
+                      );
+                    })()}
 
                     {/* Widget Layer Identifier */}
                     <div>
