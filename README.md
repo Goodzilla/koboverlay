@@ -4,12 +4,6 @@ KobOverlay is a lightweight, high-performance, real-time overlay studio for live
 
 Designed for easy open-source self-hosting and low-cost deployment ($0-$5/mo on Render, Railway, Fly.io, or VPS).
 
----
-
-## Language & Localization Directive
-
-> **CRITICAL REQUIREMENT FOR DEVELOPERS & AI ASSISTANTS**:
-> All user interface (UI) text, button labels, dropdown options, inspector controls, error messages, tooltips, placeholders, and code documentation in this repository **MUST ALWAYS BE WRITTEN IN 100% ENGLISH**. Never add non-English strings to the codebase or user interface.
 
 ---
 
