@@ -13,8 +13,9 @@ export const getServerUrl = () => {
   return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000';
 };
 
-export const createOverlaySocket = () => {
+export const createOverlaySocket = (token?: string) => {
   return io(getServerUrl(), {
     transports: ['websocket', 'polling'],
+    auth: token ? { token } : undefined,
   });
 };

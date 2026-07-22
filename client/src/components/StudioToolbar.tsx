@@ -5,10 +5,9 @@ import {
   Grid,
   Copy,
   Check,
-  RotateCcw,
   Tv,
   Users,
-  Home,
+  Activity,
 } from 'lucide-react';
 
 interface StudioToolbarProps {
@@ -18,11 +17,14 @@ interface StudioToolbarProps {
   canRedo: boolean;
   gridSnap: boolean;
   historyLength: number;
+  alertQueueCount?: number;
+  isRightSidebarOpen?: boolean;
   onUndo: () => void;
   onRedo: () => void;
   onToggleGridSnap: () => void;
   onResetAllLayouts: () => void;
   onOpenModManager?: () => void;
+  onToggleRightSidebar?: () => void;
 }
 
 export const StudioToolbar: React.FC<StudioToolbarProps> = ({
@@ -32,28 +34,23 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
   canRedo,
   gridSnap,
   historyLength,
+  alertQueueCount = 0,
+  isRightSidebarOpen = false,
   onUndo,
   onRedo,
   onToggleGridSnap,
   onResetAllLayouts,
   onOpenModManager,
+  onToggleRightSidebar,
 }) => {
   const [copiedObs, setCopiedObs] = useState(false);
-  const [copiedMod, setCopiedMod] = useState(false);
 
   const obsUrl = `${window.location.origin}/overlay/${token}`;
-  const modUrl = `${window.location.origin}/studio?token=${token}`;
 
   const copyObsUrl = () => {
     navigator.clipboard.writeText(obsUrl);
     setCopiedObs(true);
     setTimeout(() => setCopiedObs(false), 2000);
-  };
-
-  const copyModUrl = () => {
-    navigator.clipboard.writeText(modUrl);
-    setCopiedMod(true);
-    setTimeout(() => setCopiedMod(false), 2000);
   };
 
   return (
@@ -70,7 +67,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
         flexShrink: 0,
       }}
     >
-      {/* Left: Perfectly Aligned Logo & Navigation */}
+      {/* Left: Logo, History Controls, Grid Snap & Alert Feed Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <a
           href="/"
@@ -132,6 +129,43 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
         >
           <Grid size={13} /> Grid Snap {gridSnap ? 'ON' : 'OFF'}
         </button>
+
+        {/* Prominent Alert Feed Toggle Button */}
+        {onToggleRightSidebar && (
+          <button
+            className={`studio-btn ${isRightSidebarOpen ? 'studio-btn-active' : ''}`}
+            onClick={onToggleRightSidebar}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.75rem',
+              background: isRightSidebarOpen ? 'rgba(99, 102, 241, 0.2)' : '#18181b',
+              borderColor: isRightSidebarOpen ? '#6366f1' : '#27272a',
+              color: isRightSidebarOpen ? '#818cf8' : '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+            title="Toggle Live Alert Feed & Queue Sidebar"
+          >
+            <Activity size={13} color={isRightSidebarOpen ? '#818cf8' : '#6366f1'} />
+            Alert Feed
+            {alertQueueCount > 0 && (
+              <span
+                style={{
+                  background: '#10b981',
+                  color: '#ffffff',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  padding: '1px 6px',
+                  borderRadius: '10px',
+                  marginLeft: '2px',
+                }}
+              >
+                {alertQueueCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Right: Mod Manager & OBS URL Links */}

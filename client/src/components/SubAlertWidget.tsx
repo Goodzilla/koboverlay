@@ -32,10 +32,11 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
 
   useEffect(() => {
     if (alert) {
+      const isPreview = alert.id?.startsWith('preview_') || alert.durationMs === 999999;
       setAnimState('enter');
 
-      // Play alert sound if configured and not muted
-      if (alert.soundUrl && !muted) {
+      // Play alert sound ONLY for real live/test alerts, NEVER on idle editing config changes
+      if (alert.soundUrl && !muted && !isPreview) {
         try {
           const audio = new Audio(alert.soundUrl);
           audio.volume = (alert.soundVolume !== undefined ? alert.soundVolume : 80) / 100;
@@ -45,24 +46,26 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
         }
       }
 
-      const duration = alert.durationMs || 5000;
-      const exitTimer = setTimeout(() => {
-        setAnimState('exit');
-      }, Math.max(500, duration - 400));
+      if (!isPreview) {
+        const duration = alert.durationMs || 5000;
+        const exitTimer = setTimeout(() => {
+          setAnimState('exit');
+        }, Math.max(500, duration - 400));
 
-      const hideTimer = setTimeout(() => {
-        setAnimState('hidden');
-        if (onAnimationComplete) onAnimationComplete();
-      }, duration);
+        const hideTimer = setTimeout(() => {
+          setAnimState('hidden');
+          if (onAnimationComplete) onAnimationComplete();
+        }, duration);
 
-      return () => {
-        clearTimeout(exitTimer);
-        clearTimeout(hideTimer);
-      };
+        return () => {
+          clearTimeout(exitTimer);
+          clearTimeout(hideTimer);
+        };
+      }
     } else {
       setAnimState('hidden');
     }
-  }, [alert, onAnimationComplete]);
+  }, [alert?.id, alert?.type, alert?.soundUrl, muted, onAnimationComplete]);
 
   if (!alert || animState === 'hidden') return null;
 
