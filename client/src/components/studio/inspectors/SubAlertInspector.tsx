@@ -1,6 +1,7 @@
 import React from 'react';
 import { LayoutGrid, Zap, Volume2, Type, Palette, Upload, Play } from 'lucide-react';
 import { WidgetInstance } from '../../LayerTree';
+import { InspectorSection } from '../../common/InspectorSection';
 
 interface SubAlertInspectorProps {
   widget: WidgetInstance;
@@ -56,11 +57,7 @@ export const SubAlertInspector: React.FC<SubAlertInspectorProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* SECTION 1: GENERAL SETTINGS */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <LayoutGrid size={14} color="#6366f1" /> General Settings
-        </div>
-
+      <InspectorSection title="General Settings" icon={<LayoutGrid size={14} color="#6366f1" />}>
         <div>
           <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '5px' }}>
             Layer Label (Internal Identifier)
@@ -93,14 +90,10 @@ export const SubAlertInspector: React.FC<SubAlertInspectorProps> = ({
             Available variables: <span style={{ color: '#818cf8', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{getAvailableVarsText()}</span>
           </div>
         </div>
-      </div>
+      </InspectorSection>
 
       {/* SECTION 2: TRIGGER & TIER CONDITIONS */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <Zap size={14} color="#38bdf8" /> Event Triggers & Tier Rules
-        </div>
-
+      <InspectorSection title="Event Triggers & Tier Rules" icon={<Zap size={14} color="#38bdf8" />} titleColor="#38bdf8">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '5px' }}>
@@ -139,14 +132,10 @@ export const SubAlertInspector: React.FC<SubAlertInspectorProps> = ({
             </select>
           </div>
         </div>
-      </div>
+      </InspectorSection>
 
-      {/* SECTION 4: ALERT SOUND EFFECT */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <Volume2 size={14} color="#38bdf8" /> Alert Sound Effect
-        </div>
-
+      {/* SECTION 3: ALERT SOUND EFFECT */}
+      <InspectorSection title="Alert Sound Effect" icon={<Volume2 size={14} color="#38bdf8" />}>
         <div>
           <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '5px' }}>
             Sound File (Upload MP3 / WAV or Link)
@@ -222,14 +211,10 @@ export const SubAlertInspector: React.FC<SubAlertInspectorProps> = ({
             <Play size={13} /> Test Sound Preview
           </button>
         </div>
-      </div>
+      </InspectorSection>
 
-      {/* SECTION 5: TYPOGRAPHY & MEDIA */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <Type size={14} color="#6366f1" /> Typography & Media
-        </div>
-
+      {/* SECTION 4: TYPOGRAPHY & MEDIA */}
+      <InspectorSection title="Typography & Media" icon={<Type size={14} color="#6366f1" />}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '5px' }}>
@@ -317,14 +302,10 @@ export const SubAlertInspector: React.FC<SubAlertInspectorProps> = ({
             style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
           />
         </div>
-      </div>
+      </InspectorSection>
 
-      {/* SECTION 6: CARD CONTAINER STYLING */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <Palette size={14} color="#6366f1" /> Card Container Styling
-        </div>
-
+      {/* SECTION 5: CARD CONTAINER STYLING */}
+      <InspectorSection title="Card Container Styling" icon={<Palette size={14} color="#6366f1" />}>
         <div>
           <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '5px' }}>
             Card Background Color
@@ -374,7 +355,7 @@ export const SubAlertInspector: React.FC<SubAlertInspectorProps> = ({
             style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
           />
         </div>
-      </div>
+      </InspectorSection>
     </div>
   );
 };

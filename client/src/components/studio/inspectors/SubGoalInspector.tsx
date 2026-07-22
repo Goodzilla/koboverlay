@@ -1,6 +1,7 @@
 import React from 'react';
 import { LayoutGrid, BarChart3, Type, Palette, Upload, Sliders, Eye, EyeOff } from 'lucide-react';
 import { WidgetInstance } from '../../LayerTree';
+import { InspectorSection } from '../../common/InspectorSection';
 
 interface SubGoalInspectorProps {
   widget: WidgetInstance;
@@ -19,10 +20,7 @@ export const SubGoalInspector: React.FC<SubGoalInspectorProps> = ({
   return (
     <>
       {/* SECTION 1: GENERAL SETTINGS */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <LayoutGrid size={14} color="#6366f1" /> General Settings
-        </div>
+      <InspectorSection title="General Settings" icon={<LayoutGrid size={14} color="#6366f1" />}>
         <div>
           <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '4px' }}>
             Layer Label (Internal Identifier)
@@ -47,13 +45,10 @@ export const SubGoalInspector: React.FC<SubGoalInspectorProps> = ({
             style={{ fontSize: '0.78rem' }}
           />
         </div>
-      </div>
+      </InspectorSection>
 
-      {/* SECTION 3: GOAL COUNTER & NUMERIC DATA */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <BarChart3 size={14} color="#6366f1" /> Goal Counter & Values
-        </div>
+      {/* SECTION 2: GOAL COUNTER & NUMERIC DATA */}
+      <InspectorSection title="Goal Counter & Values" icon={<BarChart3 size={14} color="#6366f1" />}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '4px' }}>
@@ -82,14 +77,10 @@ export const SubGoalInspector: React.FC<SubGoalInspectorProps> = ({
             />
           </div>
         </div>
-      </div>
+      </InspectorSection>
 
-      {/* SECTION 4: PROGRESS BAR & DISPLAY OPTIONS */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <Sliders size={14} color="#6366f1" /> Progress Bar & Display Options
-        </div>
-
+      {/* SECTION 3: PROGRESS BAR & DISPLAY OPTIONS */}
+      <InspectorSection title="Progress Bar & Display Options" icon={<Sliders size={14} color="#6366f1" />}>
         {/* Display Toggles */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           <button
@@ -186,14 +177,10 @@ export const SubGoalInspector: React.FC<SubGoalInspectorProps> = ({
             style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
           />
         </div>
-      </div>
+      </InspectorSection>
 
-      {/* SECTION 5: TYPOGRAPHY & MEDIA */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <Type size={14} color="#6366f1" /> Typography & Media
-        </div>
-
+      {/* SECTION 4: TYPOGRAPHY & MEDIA */}
+      <InspectorSection title="Typography & Media" icon={<Type size={14} color="#6366f1" />}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           <div>
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '4px' }}>
@@ -283,14 +270,10 @@ export const SubGoalInspector: React.FC<SubGoalInspectorProps> = ({
             />
           </div>
         )}
-      </div>
+      </InspectorSection>
 
-      {/* SECTION 6: CARD CONTAINER STYLING */}
-      <div style={{ background: '#16161a', border: '1px solid #27272a', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
-          <Palette size={14} color="#6366f1" /> Card Container Styling
-        </div>
-
+      {/* SECTION 5: CARD CONTAINER STYLING */}
+      <InspectorSection title="Card Container Styling" icon={<Palette size={14} color="#6366f1" />}>
         <div>
           <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d4d4d8', display: 'block', marginBottom: '4px' }}>
             Card Background Color
@@ -340,7 +323,7 @@ export const SubGoalInspector: React.FC<SubGoalInspectorProps> = ({
             style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
           />
         </div>
-      </div>
+      </InspectorSection>
     </>
   );
 };

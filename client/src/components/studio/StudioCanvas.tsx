@@ -1,9 +1,9 @@
 import React from 'react';
-import { WidgetInstance } from '../LayerTree';
-import { WidgetLayout, DraggableWidget } from '../DraggableWidget';
+import { DraggableWidget, WidgetLayout } from '../DraggableWidget';
 import { SubGoalWidget } from '../SubGoalWidget';
 import { SubAlertWidget, AlertData } from '../SubAlertWidget';
 import { CustomImageWidget } from '../CustomImageWidget';
+import { WidgetInstance } from '../LayerTree';
 import { WIDGET_DEFAULT_DIMENSIONS } from '../../constants/widgets';
 
 interface StudioCanvasProps {
@@ -139,16 +139,20 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         <div
           style={{
             position: 'absolute',
-            bottom: '10px',
+            bottom: '12px',
             right: '12px',
-            fontSize: '0.65rem',
-            fontWeight: 700,
-            color: '#52525b',
+            fontSize: '0.7rem',
+            color: '#71717a',
+            background: 'rgba(0,0,0,0.6)',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backdropFilter: 'blur(4px)',
             fontFamily: 'var(--font-mono)',
+            border: '1px solid rgba(255,255,255,0.05)',
             pointerEvents: 'none',
           }}
         >
-          1920×1080 CANVAS • CTRL+Z UNDO READY
+          1920 × 1080 Viewport Canvas
         </div>
       </div>
     </main>
