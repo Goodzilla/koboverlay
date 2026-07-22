@@ -18,6 +18,8 @@ import {
   Gift,
   RotateCcw,
   Plus,
+  Crown,
+  Users,
 } from 'lucide-react';
 
 export interface StudioState {
@@ -317,20 +319,84 @@ export const Dashboard: React.FC = () => {
     setSelectedWidgetId('subGoal_default');
   };
 
-  // Trigger Simulated Sub Alert
-  const triggerTestAlert = (type: 'sub' | 'resub' | 'subgift', tier: 'Prime' | '1000' | '2000' | '3000') => {
-    const usernames = ['PixelNinja', 'CyberKnight', 'NeonStreamer', 'VortexPro', 'AuraGamer'];
+  // Smart Alert Matching Algorithm (Finds best matching alert widget by tier & trigger conditions)
+  const matchAlertToWidget = (
+    type: 'sub' | 'resub' | 'subgift' | 'bits' | 'raid',
+    tier: 'Prime' | '1000' | '2000' | '3000',
+    amount: number = 1,
+    months: number = 1
+  ): WidgetInstance | null => {
+    const alertWidgets = state.widgets.filter((w) => w.type === 'subAlert' && w.layout.visible !== false);
+    if (alertWidgets.length === 0) return null;
+
+    let bestMatch: WidgetInstance = alertWidgets[0];
+    let maxScore = -1;
+
+    for (const widget of alertWidgets) {
+      const cfg = widget.config;
+      let score = 0;
+
+      // Event Type Matching
+      const evtMatch = !cfg.triggerEventType || cfg.triggerEventType === 'all' || cfg.triggerEventType === type;
+      if (!evtMatch) continue;
+      if (cfg.triggerEventType === type) score += 10;
+
+      // Tier Matching
+      const tierMatch = !cfg.triggerTier || cfg.triggerTier === 'all' || cfg.triggerTier === tier;
+      if (!tierMatch) continue;
+      if (cfg.triggerTier === tier) score += 5;
+
+      // Amount / Quantity Threshold
+      if (cfg.triggerMinAmount && cfg.triggerMinAmount > 0) {
+        if (amount < cfg.triggerMinAmount) continue;
+        score += Math.min(20, cfg.triggerMinAmount);
+      }
+
+      // Month Threshold
+      if (cfg.triggerMinMonths && cfg.triggerMinMonths > 0) {
+        if (months < cfg.triggerMinMonths) continue;
+        score += Math.min(20, cfg.triggerMinMonths);
+      }
+
+      if (score > maxScore) {
+        maxScore = score;
+        bestMatch = widget;
+      }
+    }
+
+    return bestMatch;
+  };
+
+  // Trigger Simulated Alert Event
+  const triggerTestAlert = (
+    type: 'sub' | 'resub' | 'subgift' | 'bits' | 'raid',
+    tier: 'Prime' | '1000' | '2000' | '3000' = '1000',
+    amount: number = 1,
+    months: number = 1
+  ) => {
+    const usernames = ['PixelNinja', 'CyberKnight', 'NeonStreamer', 'VortexPro', 'AuraGamer', 'HyperDrive'];
     const randomUser = usernames[Math.floor(Math.random() * usernames.length)];
-    const randomMonths = type === 'resub' ? Math.floor(Math.random() * 12) + 2 : 1;
+
+    const matchedWidget = matchAlertToWidget(type, tier, amount, months);
 
     const alertPayload: Omit<AlertData, 'id'> = {
       type,
       username: randomUser,
       tier,
-      months: randomMonths,
-      message: type === 'resub' ? 'Loving the stream! Keep up the epic work 🔥' : undefined,
+      amount,
+      months,
+      message: type === 'resub' ? 'Loving the stream! Keep up the epic work 🔥' : type === 'bits' ? 'Take my bits! GG!' : undefined,
       durationMs: state.alertDuration,
-      primaryColor: state.primaryColor,
+      primaryColor: matchedWidget?.config.primaryColor || state.primaryColor,
+      backgroundColor: matchedWidget?.config.backgroundColor || '#18181b',
+      textColor: matchedWidget?.config.textColor,
+      fontSize: matchedWidget?.config.fontSize,
+      borderRadius: matchedWidget?.config.borderRadius,
+      imageUrl: matchedWidget?.config.imageUrl,
+      imageSize: matchedWidget?.config.imageSize,
+      soundUrl: matchedWidget?.config.soundUrl,
+      soundVolume: matchedWidget?.config.soundVolume,
+      customTextTemplate: matchedWidget?.config.customTextTemplate,
     };
 
     if (socket && connected) {
@@ -341,6 +407,10 @@ export const Dashboard: React.FC = () => {
       ...alertPayload,
       id: Math.random().toString(36).substring(2, 9),
     });
+
+    if (matchedWidget) {
+      setSelectedWidgetId(matchedWidget.id);
+    }
   };
 
   return (
@@ -446,20 +516,68 @@ export const Dashboard: React.FC = () => {
 
             {activeTab === 'simulator' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a1a1aa' }}>Test Event Triggers</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  ⚡ Simulate Stream Events
+                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button className="studio-btn studio-btn-primary" onClick={() => triggerTestAlert('sub', '1000')}>
-                    <Zap size={14} /> Test Tier 1 Sub
-                  </button>
-                  <button className="studio-btn" onClick={() => triggerTestAlert('sub', 'Prime')}>
-                    <Sparkles size={14} /> Test Prime Sub
-                  </button>
-                  <button className="studio-btn" onClick={() => triggerTestAlert('resub', '2000')}>
-                    <Zap size={14} /> Test 6-Month Resub
-                  </button>
-                  <button className="studio-btn" onClick={() => triggerTestAlert('subgift', '1000')}>
-                    <Gift size={14} /> Test Gift Sub
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Single Subs */}
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa' }}>SUBSCRIBE EVENTS</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <button className="studio-btn studio-btn-primary" onClick={() => triggerTestAlert('sub', '1000', 1)} style={{ fontSize: '0.72rem' }}>
+                      <Zap size={12} /> Tier 1 Sub
+                    </button>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('sub', 'Prime', 1)} style={{ fontSize: '0.72rem' }}>
+                      <Sparkles size={12} color="#a855f7" /> Prime Sub
+                    </button>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('sub', '3000', 1)} style={{ fontSize: '0.72rem', gridColumn: 'span 2' }}>
+                      <Crown size={12} color="#f59e0b" /> Tier 3 Sub ($24.99)
+                    </button>
+                  </div>
+
+                  {/* Gifted Subs Tiers */}
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>GIFTED SUBS PALIER</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('subgift', '1000', 1)} style={{ fontSize: '0.72rem' }}>
+                      <Gift size={12} color="#ec4899" /> 1 Gift Sub
+                    </button>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('subgift', '1000', 5)} style={{ fontSize: '0.72rem', borderColor: '#ec4899' }}>
+                      <Gift size={12} color="#ec4899" /> 5x Gifted Subs
+                    </button>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('subgift', '1000', 20)} style={{ fontSize: '0.72rem', gridColumn: 'span 2', background: 'rgba(236, 72, 153, 0.15)', borderColor: '#ec4899' }}>
+                      <Gift size={12} color="#ec4899" /> 20x MEGA Gift Bomb 🔥
+                    </button>
+                  </div>
+
+                  {/* Re-subs */}
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>RE-SUBS & ANCIENNETÉ</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('resub', '1000', 1, 3)} style={{ fontSize: '0.72rem' }}>
+                      <RotateCcw size={12} /> 3-Month Resub
+                    </button>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('resub', '2000', 1, 12)} style={{ fontSize: '0.72rem', borderColor: '#6366f1' }}>
+                      <Crown size={12} color="#6366f1" /> 12-Month Resub
+                    </button>
+                  </div>
+
+                  {/* Bits Cheer Tiers */}
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>BITS & CHEER PALIER</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('bits', '1000', 100)} style={{ fontSize: '0.72rem' }}>
+                      <Zap size={12} color="#eab308" /> 100 Bits
+                    </button>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('bits', '1000', 1000)} style={{ fontSize: '0.72rem', borderColor: '#eab308' }}>
+                      <Zap size={12} color="#eab308" /> 1,000 Bits
+                    </button>
+                    <button className="studio-btn" onClick={() => triggerTestAlert('bits', '1000', 5000)} style={{ fontSize: '0.72rem', gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', borderColor: '#eab308' }}>
+                      <Zap size={12} color="#eab308" /> 5,000 SUPER Cheer 💎
+                    </button>
+                  </div>
+
+                  {/* Raid */}
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>RAIDS</div>
+                  <button className="studio-btn" onClick={() => triggerTestAlert('raid', '1000', 50)} style={{ fontSize: '0.72rem', width: '100%' }}>
+                    <Users size={12} color="#10b981" /> Raid 50 Viewers
                   </button>
                 </div>
               </div>

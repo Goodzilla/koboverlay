@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 
 export interface AlertData {
   id: string;
-  type: 'sub' | 'resub' | 'subgift';
+  type: 'sub' | 'resub' | 'subgift' | 'bits' | 'raid';
   username: string;
   tier: 'Prime' | '1000' | '2000' | '3000';
+  amount?: number;
   months?: number;
   message?: string;
   durationMs?: number;
@@ -83,11 +84,18 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
       return alert.customTextTemplate
         .replace('{username}', alert.username)
         .replace('{months}', String(alert.months || 1))
+        .replace('{amount}', String(alert.amount || 1))
         .replace('{tier}', getTierLabel());
     }
 
     if (alert.type === 'subgift') {
-      return `${alert.username} gifted a sub (${getTierLabel()})`;
+      return `${alert.username} gifted ${alert.amount || 1} subs (${getTierLabel()})`;
+    }
+    if (alert.type === 'bits') {
+      return `${alert.username} cheered ${alert.amount || 100} Bits!`;
+    }
+    if (alert.type === 'raid') {
+      return `${alert.username} raided with ${alert.amount || 10} viewers!`;
     }
     if (alert.type === 'resub') {
       return `${alert.username} subscribed for ${alert.months || 1} months (${getTierLabel()})`;
