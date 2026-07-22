@@ -41,6 +41,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   const [currentLayout, setCurrentLayout] = useState<WidgetLayout>(layout);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const innerContentRef = useRef<HTMLDivElement>(null);
   const currentLayoutRef = useRef<WidgetLayout>(layout);
   const startDragRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number } | null>(null);
   const startResizeRef = useRef<{ mouseX: number; mouseY: number; startW: number; startH: number } | null>(null);
@@ -53,133 +54,153 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     }
   }, [layout, isDragging, isResizing]);
 
-  if (layout.visible === false) {
-    return null;
-  }
+  // Auto-expand drag bounding box to encapsulate content natural height/width if content grows
+  useEffect(() => {
+    if (innerContentRef.current) {
+      const naturalHeight = innerContentRef.current.scrollHeight;
+      const naturalWidth = innerContentRef.current.scrollWidth;
 
-  const snapToGrid = (val: number, gridSize = 20) => {
-    return gridSnap ? Math.round(val / gridSize) * gridSize : val;
+      let needsUpdate = false;
+      let newW = currentLayout.width;
+      let newH = currentLayout.height;
+
+      if (naturalHeight > currentLayout.height) {
+        newH = Math.ceil(naturalHeight);
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        const updated = { ...currentLayout, width: newW, height: newH };
+        setCurrentLayout(updated);
+        currentLayoutRef.current = updated;
+        onLayoutChange(updated);
+      }
+    }
+  }, [children, layout.width, layout.height, onLayoutChange]);
+
+  const snapValue = (val: number, step = 20) => {
+    return Math.round(val / step) * step;
   };
 
-  // --- DRAG HANDLERS ---
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (onSelect) onSelect();
-    if (!isEditable || isResizing) return;
-    e.preventDefault();
+    if (!isEditable) return;
     e.stopPropagation();
+
+    if (onSelect) onSelect();
 
     setIsDragging(true);
     startDragRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
-      startX: currentLayoutRef.current.x,
-      startY: currentLayoutRef.current.y,
+      startX: currentLayout.x,
+      startY: currentLayout.y,
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!startDragRef.current) return;
+      const deltaX = moveEvent.clientX - startDragRef.current.mouseX;
+      const deltaY = moveEvent.clientY - startDragRef.current.mouseY;
+
+      let rawX = startDragRef.current.startX + deltaX;
+      let rawY = startDragRef.current.startY + deltaY;
+
+      if (gridSnap) {
+        rawX = snapValue(rawX, 20);
+        rawY = snapValue(rawY, 20);
+      }
+
+      const clampedX = Math.max(0, Math.min(1920 - currentLayoutRef.current.width, rawX));
+      const clampedY = Math.max(0, Math.min(1080 - currentLayoutRef.current.height, rawY));
+
+      const updated = {
+        ...currentLayoutRef.current,
+        x: clampedX,
+        y: clampedY,
+      };
+
+      setCurrentLayout(updated);
+      currentLayoutRef.current = updated;
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      startDragRef.current = null;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      onLayoutChange(currentLayoutRef.current);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!startDragRef.current || !containerRef.current) return;
-    const parent = containerRef.current.parentElement;
-    if (!parent) return;
-
-    const parentRect = parent.getBoundingClientRect();
-    const scaleX = 1920 / parentRect.width;
-    const scaleY = 1080 / parentRect.height;
-
-    const deltaX = (e.clientX - startDragRef.current.mouseX) * scaleX;
-    const deltaY = (e.clientY - startDragRef.current.mouseY) * scaleY;
-
-    let newX = snapToGrid(Math.round(startDragRef.current.startX + deltaX));
-    let newY = snapToGrid(Math.round(startDragRef.current.startY + deltaY));
-
-    newX = Math.max(0, Math.min(1920 - Math.min(currentLayoutRef.current.width, 200), newX));
-    newY = Math.max(0, Math.min(1080 - Math.min(currentLayoutRef.current.height, 60), newY));
-
-    const updated = { ...currentLayoutRef.current, x: newX, y: newY };
-    currentLayoutRef.current = updated;
-    setCurrentLayout(updated);
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
-
-    if (startDragRef.current) {
-      startDragRef.current = null;
-      onLayoutChange(currentLayoutRef.current);
-    }
-  };
-
-  // --- RESIZE HANDLERS ---
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     if (!isEditable) return;
-    e.preventDefault();
     e.stopPropagation();
 
     setIsResizing(true);
     startResizeRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
-      startW: currentLayoutRef.current.width,
-      startH: currentLayoutRef.current.height,
+      startW: currentLayout.width,
+      startH: currentLayout.height,
+    };
+
+    const handleResizeMouseMove = (moveEvent: MouseEvent) => {
+      if (!startResizeRef.current) return;
+      const deltaX = moveEvent.clientX - startResizeRef.current.mouseX;
+      const deltaY = moveEvent.clientY - startResizeRef.current.mouseY;
+
+      let rawW = startResizeRef.current.startW + deltaX;
+      let rawH = startResizeRef.current.startH + deltaY;
+
+      if (gridSnap) {
+        rawW = snapValue(rawW, 20);
+        rawH = snapValue(rawH, 20);
+      }
+
+      const minW = 120;
+      const minH = 40;
+      const clampedW = Math.max(minW, Math.min(1920 - currentLayoutRef.current.x, rawW));
+      const clampedH = Math.max(minH, Math.min(1080 - currentLayoutRef.current.y, rawH));
+
+      const updated = {
+        ...currentLayoutRef.current,
+        width: clampedW,
+        height: clampedH,
+      };
+
+      setCurrentLayout(updated);
+      currentLayoutRef.current = updated;
+    };
+
+    const handleResizeMouseUp = () => {
+      setIsResizing(false);
+      startResizeRef.current = null;
+      window.removeEventListener('mousemove', handleResizeMouseMove);
+      window.removeEventListener('mouseup', handleResizeMouseUp);
+      onLayoutChange(currentLayoutRef.current);
     };
 
     window.addEventListener('mousemove', handleResizeMouseMove);
     window.addEventListener('mouseup', handleResizeMouseUp);
   };
 
-  const handleResizeMouseMove = (e: MouseEvent) => {
-    if (!startResizeRef.current || !containerRef.current) return;
-    const parent = containerRef.current.parentElement;
-    if (!parent) return;
-
-    const parentRect = parent.getBoundingClientRect();
-    const scaleX = 1920 / parentRect.width;
-    const scaleY = 1080 / parentRect.height;
-
-    const deltaX = (e.clientX - startResizeRef.current.mouseX) * scaleX;
-    const deltaY = (e.clientY - startResizeRef.current.mouseY) * scaleY;
-
-    let newW = snapToGrid(Math.round(startResizeRef.current.startW + deltaX));
-    let newH = snapToGrid(Math.round(startResizeRef.current.startH + deltaY));
-
-    newW = Math.max(160, Math.min(1920 - currentLayoutRef.current.x, newW));
-    newH = Math.max(60, Math.min(1080 - currentLayoutRef.current.y, newH));
-
-    const updated = { ...currentLayoutRef.current, width: newW, height: newH };
-    currentLayoutRef.current = updated;
-    setCurrentLayout(updated);
-  };
-
-  const handleResizeMouseUp = () => {
-    setIsResizing(false);
-    window.removeEventListener('mousemove', handleResizeMouseMove);
-    window.removeEventListener('mouseup', handleResizeMouseUp);
-
-    if (startResizeRef.current) {
-      startResizeRef.current = null;
-      onLayoutChange(currentLayoutRef.current);
-    }
-  };
-
   const handleResetSize = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const resetLayout = {
-      ...currentLayoutRef.current,
+    let resetH = defaultHeight;
+    if (innerContentRef.current) {
+      resetH = Math.max(defaultHeight, innerContentRef.current.scrollHeight);
+    }
+    const updated = {
+      ...currentLayout,
       width: defaultWidth,
-      height: defaultHeight,
+      height: resetH,
     };
-    currentLayoutRef.current = resetLayout;
-    setCurrentLayout(resetLayout);
-    onLayoutChange(resetLayout);
+    setCurrentLayout(updated);
+    currentLayoutRef.current = updated;
+    onLayoutChange(updated);
   };
-
-  const scaleX = currentLayout.width / defaultWidth;
-  const scaleY = currentLayout.height / defaultHeight;
 
   const leftPercent = (currentLayout.x / 1920) * 100;
   const topPercent = (currentLayout.y / 1080) * 100;
@@ -251,15 +272,15 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           background: isEditable ? 'rgba(23, 17, 44, 0.4)' : 'transparent',
           position: 'relative',
           boxSizing: 'border-box',
+          overflow: 'visible',
         }}
       >
-        {/* Scaled Children Wrapper */}
+        {/* Inner Content Wrapper */}
         <div
+          ref={innerContentRef}
           style={{
-            width: `${defaultWidth}px`,
-            height: `${defaultHeight}px`,
-            transform: `scale(${scaleX}, ${scaleY})`,
-            transformOrigin: 'top left',
+            width: '100%',
+            height: '100%',
             pointerEvents: isEditable ? 'none' : 'auto',
           }}
         >
