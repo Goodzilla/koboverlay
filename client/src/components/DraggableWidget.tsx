@@ -74,8 +74,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     let newX = Math.round(startDragRef.current.startX + deltaX);
     let newY = Math.round(startDragRef.current.startY + deltaY);
 
-    newX = Math.max(0, Math.min(1920 - currentLayout.width, newX));
-    newY = Math.max(0, Math.min(1080 - currentLayout.height, newY));
+    // Keep completely inside 1920x1080 canvas bounds
+    newX = Math.max(0, Math.min(1920 - Math.min(currentLayout.width, 300), newX));
+    newY = Math.max(0, Math.min(1080 - Math.min(currentLayout.height, 100), newY));
 
     setCurrentLayout((prev) => ({ ...prev, x: newX, y: newY }));
   };
@@ -123,8 +124,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     let newW = Math.round(startResizeRef.current.startW + deltaX);
     let newH = Math.round(startResizeRef.current.startH + deltaY);
 
-    newW = Math.max(160, Math.min(1600, newW));
-    newH = Math.max(60, Math.min(1000, newH));
+    // Clamp min and max values to keep resize handles within reach
+    newW = Math.max(180, Math.min(1920 - currentLayout.x, newW));
+    newH = Math.max(60, Math.min(1080 - currentLayout.y, newH));
 
     setCurrentLayout((prev) => ({ ...prev, width: newW, height: newH }));
   };
@@ -154,7 +156,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   const scaleX = currentLayout.width / defaultWidth;
   const scaleY = currentLayout.height / defaultHeight;
 
-  // Convert 1920x1080 PX values to percentage left/top/width/height for responsive canvas rendering
+  // Convert 1920x1080 PX values to percentage left/top for responsive canvas rendering
   const leftPercent = (currentLayout.x / 1920) * 100;
   const topPercent = (currentLayout.y / 1080) * 100;
 
@@ -172,14 +174,15 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
       }}
       onMouseDown={handleMouseDown}
     >
-      {/* Interactive Edit Header */}
+      {/* Interactive Edit Header (Always Accessible & Unclipped) */}
       {isEditable && (
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '8px',
+            flexWrap: 'wrap',
+            gap: '6px',
             background: isDragging || isResizing ? '#06b6d4' : 'rgba(124, 58, 237, 0.95)',
             color: '#ffffff',
             padding: '4px 10px',
@@ -187,42 +190,39 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             fontSize: '0.75rem',
             fontWeight: 800,
             letterSpacing: '0.5px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+            minWidth: '220px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {/* Label + Reset Button Group (Always on Left for Easy Reach) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Move size={12} />
             <span>{label}</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Exact Pixel Coordinates Badge */}
-            <span style={{ fontSize: '0.7rem', opacity: 0.9, fontFamily: 'monospace' }}>
-              X:{currentLayout.x}px Y:{currentLayout.y}px | {currentLayout.width}px × {currentLayout.height}px
-            </span>
-
-            {/* Per-Widget Reset Size Button */}
             <button
               onClick={handleResetSize}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '3px',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                background: 'rgba(255, 255, 255, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.4)',
                 color: '#ffffff',
-                fontSize: '0.65rem',
-                fontWeight: 700,
+                fontSize: '0.7rem',
+                fontWeight: 800,
                 cursor: 'pointer',
                 transition: 'background 0.2s',
               }}
-              title="Reset Widget Size to Default PX"
+              title="Reset Size to Default PX"
             >
               <RotateCcw size={10} /> Reset Size
             </button>
+          </div>
+
+          {/* Coordinates Badge */}
+          <div style={{ fontSize: '0.7rem', opacity: 0.95, fontFamily: 'monospace' }}>
+            X:{currentLayout.x}px Y:{currentLayout.y}px ({currentLayout.width}×{currentLayout.height}px)
           </div>
         </div>
       )}
@@ -236,7 +236,6 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           borderRadius: isEditable ? '0 0 12px 12px' : '0',
           background: isEditable ? 'rgba(23, 17, 44, 0.4)' : 'transparent',
           position: 'relative',
-          overflow: 'hidden',
           boxSizing: 'border-box',
         }}
       >
@@ -253,29 +252,29 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           {children}
         </div>
 
-        {/* Resizable Drag Handle */}
+        {/* Resizable Corner Handle (Always Visible inside Container Corner) */}
         {isEditable && (
           <div
             onMouseDown={handleResizeMouseDown}
             style={{
               position: 'absolute',
-              right: '2px',
-              bottom: '2px',
-              width: '20px',
-              height: '20px',
+              right: '4px',
+              bottom: '4px',
+              width: '24px',
+              height: '24px',
               borderRadius: '50%',
-              background: '#06b6d4',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
               border: '2px solid #ffffff',
               cursor: 'se-resize',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0 10px rgba(6, 182, 212, 0.9)',
-              zIndex: 120,
+              boxShadow: '0 0 12px rgba(6, 182, 212, 1)',
+              zIndex: 150,
             }}
             title="Click and drag to resize width & height (in PX)"
           >
-            <Maximize2 size={11} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
+            <Maximize2 size={12} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
           </div>
         )}
       </div>
