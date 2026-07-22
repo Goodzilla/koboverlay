@@ -6,6 +6,13 @@ Designed for easy open-source self-hosting and low-cost deployment ($0–$5/mo o
 
 ---
 
+## 🌐 Language & Localization Directive
+
+> ⚠️ **CRITICAL REQUIREMENT FOR DEVELOPERS & AI ASSISTANTS**:
+> All user interface (UI) text, button labels, dropdown options, inspector controls, error messages, tooltips, placeholders, and code documentation in this repository **MUST ALWAYS BE WRITTEN IN 100% ENGLISH**. Never add non-English strings to the codebase or user interface.
+
+---
+
 ## ✨ Features
 
 - 🎭 **OBS Studio Browser Source Overlay**: Transparent, ultra-low latency real-time overlays (`/overlay/:overlayToken`).

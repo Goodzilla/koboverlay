@@ -325,17 +325,17 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                     </div>
                   </div>
 
-                  {/* SECTION 2: ⚡ ALERT TRIGGER CONDITIONS / PALIERS (For Sub Alert) */}
+                  {/* SECTION 2: ⚡ ALERT TRIGGER CONDITIONS & TIERS (For Sub Alert) */}
                   {widget.type === 'subAlert' && (
                     <div style={{ background: '#18181b', border: '1px solid #38bdf840', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #27272a', paddingBottom: '6px' }}>
-                        <Zap size={13} color="#38bdf8" /> Conditions de Déclenchement / Paliers
+                        <Zap size={13} color="#38bdf8" /> Alert Trigger Conditions & Tiers
                       </div>
 
                       {/* Event Type Filter */}
                       <div>
                         <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                          Déclencher sur quel événement ?
+                          Trigger Event Type
                         </label>
                         <select
                           className="studio-input"
@@ -343,12 +343,12 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                           onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerEventType: e.target.value as any })}
                           style={{ fontSize: '0.75rem', cursor: 'pointer', background: '#09090b', color: '#ffffff' }}
                         >
-                          <option value="all">Tous les événements (Alerte générale)</option>
-                          <option value="sub">Abonnement simple (Sub)</option>
-                          <option value="resub">Ré-abonnement (Re-Sub)</option>
-                          <option value="subgift">Cadeaux de Subs (Gifted Subs)</option>
-                          <option value="bits">Cheer / Bits Twitch</option>
-                          <option value="raid">Raid / Hôte</option>
+                          <option value="all">All Events (General Alert)</option>
+                          <option value="sub">Single Subscription (Sub)</option>
+                          <option value="resub">Re-Subscription (Re-Sub)</option>
+                          <option value="subgift">Gifted Subscriptions (Sub Gift)</option>
+                          <option value="bits">Twitch Bits & Cheer</option>
+                          <option value="raid">Stream Raid / Host</option>
                         </select>
                       </div>
 
@@ -356,12 +356,12 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       {(widget.config.triggerEventType === 'subgift' || widget.config.triggerEventType === 'bits' || widget.config.triggerEventType === 'raid') && (
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Quantité Minimale Requise ({widget.config.triggerEventType === 'subgift' ? 'Subs offerts' : widget.config.triggerEventType === 'bits' ? 'Bits' : 'Viewers'})
+                            Minimum Amount Required ({widget.config.triggerEventType === 'subgift' ? 'Gifted Subs' : widget.config.triggerEventType === 'bits' ? 'Bits' : 'Viewers'})
                           </label>
                           <input
                             type="number"
                             min="1"
-                            placeholder="ex: 5"
+                            placeholder="e.g. 5"
                             value={widget.config.triggerMinAmount || 1}
                             onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerMinAmount: Number(e.target.value) })}
                             className="studio-input"
@@ -374,12 +374,12 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       {widget.config.triggerEventType === 'resub' && (
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Mois d'ancienneté Minimal (ex: 6 ou 12 mois)
+                            Minimum Subscription Months (e.g. 6 or 12 months)
                           </label>
                           <input
                             type="number"
                             min="1"
-                            placeholder="ex: 12"
+                            placeholder="e.g. 12"
                             value={widget.config.triggerMinMonths || 1}
                             onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerMinMonths: Number(e.target.value) })}
                             className="studio-input"
@@ -392,7 +392,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       {(widget.config.triggerEventType === 'sub' || widget.config.triggerEventType === 'resub' || widget.config.triggerEventType === 'subgift' || widget.config.triggerEventType === 'all') && (
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                            Filtre par Tier de Sub
+                            Subscription Tier Filter
                           </label>
                           <select
                             className="studio-input"
@@ -400,11 +400,11 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                             onChange={(e) => onUpdateWidgetConfig(widget.id, { triggerTier: e.target.value as any })}
                             style={{ fontSize: '0.75rem', cursor: 'pointer', background: '#09090b', color: '#ffffff' }}
                           >
-                            <option value="all">Tous les Tiers</option>
-                            <option value="Prime">Prime Gaming Uniquement</option>
-                            <option value="1000">Tier 1 Uniquement ($4.99)</option>
-                            <option value="2000">Tier 2 Uniquement ($9.99)</option>
-                            <option value="3000">Tier 3 Uniquement ($24.99)</option>
+                            <option value="all">All Tiers</option>
+                            <option value="Prime">Prime Gaming Only</option>
+                            <option value="1000">Tier 1 Only ($4.99)</option>
+                            <option value="2000">Tier 2 Only ($9.99)</option>
+                            <option value="3000">Tier 3 Only ($24.99)</option>
                           </select>
                         </div>
                       )}

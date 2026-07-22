@@ -536,7 +536,7 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   {/* Gifted Subs Tiers */}
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>GIFTED SUBS PALIER</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>GIFTED SUBS TIERS</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                     <button className="studio-btn" onClick={() => triggerTestAlert('subgift', '1000', 1)} style={{ fontSize: '0.72rem' }}>
                       <Gift size={12} color="#ec4899" /> 1 Gift Sub
@@ -550,7 +550,7 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   {/* Re-subs */}
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>RE-SUBS & ANCIENNETÉ</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>RE-SUBS & TENURE</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                     <button className="studio-btn" onClick={() => triggerTestAlert('resub', '1000', 1, 3)} style={{ fontSize: '0.72rem' }}>
                       <RotateCcw size={12} /> 3-Month Resub
@@ -561,7 +561,7 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   {/* Bits Cheer Tiers */}
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>BITS & CHEER PALIER</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>BITS & CHEER TIERS</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                     <button className="studio-btn" onClick={() => triggerTestAlert('bits', '1000', 100)} style={{ fontSize: '0.72rem' }}>
                       <Zap size={12} color="#eab308" /> 100 Bits
@@ -575,7 +575,7 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   {/* Raid */}
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>RAIDS</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a1a1aa', marginTop: '6px' }}>STREAM RAIDS</div>
                   <button className="studio-btn" onClick={() => triggerTestAlert('raid', '1000', 50)} style={{ fontSize: '0.72rem', width: '100%' }}>
                     <Users size={12} color="#10b981" /> Raid 50 Viewers
                   </button>
