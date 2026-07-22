@@ -404,7 +404,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Main Canvas Viewport (Scales Maximized to Screen Height) */}
         <main
-          className="canvas-grid-bg"
+          className={`canvas-grid-bg ${gridSnap ? 'canvas-grid-lines' : ''}`}
           style={{
             flex: 1,
             display: 'flex',
@@ -417,6 +417,7 @@ export const Dashboard: React.FC = () => {
         >
           {/* Scaled 1920x1080 Work Area */}
           <div
+            className={`canvas-grid-bg ${gridSnap ? 'canvas-grid-lines' : ''}`}
             style={{
               width: '100%',
               maxHeight: '100%',

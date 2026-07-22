@@ -49,6 +49,15 @@ body.overlay-mode {
   background-color: #0c0c0e;
   background-image: radial-gradient(#27272a 1px, transparent 1px);
   background-size: 20px 20px;
+  transition: background 0.2s ease;
+}
+
+/* Visible Grid Lines when Grid Snap is ON */
+.canvas-grid-lines {
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.15) 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
 }
 
 /* Scrollbar Styling */
