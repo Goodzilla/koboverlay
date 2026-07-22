@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import confetti from 'canvas-confetti';
 import { Sparkles, Crown, Zap, Gift } from 'lucide-react';
 
 export interface AlertData {
@@ -24,15 +23,6 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
   useEffect(() => {
     if (alert) {
       setAnimState('enter');
-
-      try {
-        confetti({
-          particleCount: 60,
-          spread: 60,
-          origin: { y: 0.35 },
-          colors: ['#6366f1', '#38bdf8', '#a855f7'],
-        });
-      } catch (err) {}
 
       const duration = alert.durationMs || 5000;
       const exitTimer = setTimeout(() => {
