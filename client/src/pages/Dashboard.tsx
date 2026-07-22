@@ -270,6 +270,29 @@ export const Dashboard: React.FC = () => {
     }));
   };
 
+  const handleScaleWidget = (id: string, scaleRatio: number) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => {
+        if (w.id !== id) return w;
+        const currentFontSize = w.config.fontSize || (w.type === 'subAlert' ? 18 : 14);
+        const currentImageSize = w.config.imageSize || 80;
+
+        const newFontSize = Math.max(10, Math.min(60, Math.round(currentFontSize * scaleRatio)));
+        const newImageSize = Math.max(10, Math.min(600, Math.round(currentImageSize * scaleRatio)));
+
+        return {
+          ...w,
+          config: {
+            ...w.config,
+            fontSize: newFontSize,
+            imageSize: newImageSize,
+          },
+        };
+      }),
+    }));
+  };
+
   const handleResetAllLayouts = () => {
     setStudioState(DEFAULT_STUDIO_STATE);
     setSelectedWidgetId('subGoal_default');
@@ -476,6 +499,7 @@ export const Dashboard: React.FC = () => {
                   gridSnap={gridSnap}
                   onSelect={() => setSelectedWidgetId(widget.id)}
                   onLayoutChange={(newLayout) => handleLayoutChange(widget.id, newLayout)}
+                  onScaleChange={(scaleRatio) => handleScaleWidget(widget.id, scaleRatio)}
                 >
                   {widget.type === 'subGoal' && (
                     <SubGoalWidget

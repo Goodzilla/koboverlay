@@ -20,6 +20,7 @@ interface DraggableWidgetProps {
   gridSnap?: boolean;
   onSelect?: () => void;
   onLayoutChange: (newLayout: WidgetLayout) => void;
+  onScaleChange?: (scaleRatio: number) => void;
   children: React.ReactNode;
 }
 
@@ -34,20 +35,16 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   gridSnap = false,
   onSelect,
   onLayoutChange,
+  onScaleChange,
   children,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [currentLayout, setCurrentLayout] = useState<WidgetLayout>(layout);
-  const [minSize, setMinSize] = useState<{ width: number; height: number }>({
-    width: defaultWidth,
-    height: defaultHeight,
-  });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
   const currentLayoutRef = useRef<WidgetLayout>(layout);
-  const isManuallyResizedRef = useRef<boolean>(false);
   const startDragRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number } | null>(null);
   const startResizeRef = useRef<{ mouseX: number; mouseY: number; startW: number; startH: number } | null>(null);
 
@@ -59,41 +56,44 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     }
   }, [layout, isDragging, isResizing]);
 
-  // Measure natural content size: auto-fit dragbox when config changes unless manually corner-resized
+  // Always auto-wrap dragbox around content natural size with zero dead space
   useEffect(() => {
-    if (innerContentRef.current) {
+    if (!innerContentRef.current) return;
+
+    const updateNaturalBounds = () => {
+      if (!innerContentRef.current) return;
       const scrollH = innerContentRef.current.scrollHeight;
       const scrollW = innerContentRef.current.scrollWidth;
 
-      const baseW = Math.max(defaultWidth, scrollW);
-      const baseH = Math.max(defaultHeight, scrollH);
+      if (scrollH > 0 && scrollW > 0) {
+        const newW = Math.max(100, Math.ceil(scrollW));
+        const newH = Math.max(30, Math.ceil(scrollH));
 
-      setMinSize({ width: baseW, height: baseH });
-
-      // If dragbox has NOT been manually resized by dragging the corner handle,
-      // dynamically resize the dragbox width & height to tightly fit the updated content!
-      if (!isManuallyResizedRef.current) {
-        const updated = {
-          ...currentLayoutRef.current,
-          width: baseW,
-          height: baseH,
-        };
-        setCurrentLayout(updated);
-        currentLayoutRef.current = updated;
-        onLayoutChange(updated);
-      } else if (currentLayout.width < baseW || currentLayout.height < baseH) {
-        // Even if manually resized, ensure it never clips below the content natural size
-        const updated = {
-          ...currentLayoutRef.current,
-          width: Math.max(currentLayoutRef.current.width, baseW),
-          height: Math.max(currentLayoutRef.current.height, baseH),
-        };
-        setCurrentLayout(updated);
-        currentLayoutRef.current = updated;
-        onLayoutChange(updated);
+        if (newW !== currentLayoutRef.current.width || newH !== currentLayoutRef.current.height) {
+          const updated = {
+            ...currentLayoutRef.current,
+            width: newW,
+            height: newH,
+          };
+          setCurrentLayout(updated);
+          currentLayoutRef.current = updated;
+          onLayoutChange(updated);
+        }
       }
-    }
-  }, [children, defaultWidth, defaultHeight]);
+    };
+
+    updateNaturalBounds();
+
+    const observer = new ResizeObserver(() => {
+      updateNaturalBounds();
+    });
+
+    observer.observe(innerContentRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [children, onLayoutChange]);
 
   const snapValue = (val: number, step = 20) => {
     return Math.round(val / step) * step;
@@ -156,7 +156,6 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     e.stopPropagation();
 
     setIsResizing(true);
-    isManuallyResizedRef.current = true;
     startResizeRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
@@ -177,20 +176,13 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         rawH = snapValue(rawH, 20);
       }
 
-      // Enforce minimum size to be the content's natural size
-      const minW = minSize.width;
-      const minH = minSize.height;
-      const clampedW = Math.max(minW, Math.min(1920 - currentLayoutRef.current.x, rawW));
-      const clampedH = Math.max(minH, Math.min(1080 - currentLayoutRef.current.y, rawH));
+      const ratioW = rawW / startResizeRef.current.startW;
+      const ratioH = rawH / startResizeRef.current.startH;
+      const scaleRatio = (ratioW + ratioH) / 2;
 
-      const updated = {
-        ...currentLayoutRef.current,
-        width: clampedW,
-        height: clampedH,
-      };
-
-      setCurrentLayout(updated);
-      currentLayoutRef.current = updated;
+      if (onScaleChange && Math.abs(scaleRatio - 1.0) > 0.02) {
+        onScaleChange(scaleRatio);
+      }
     };
 
     const handleResizeMouseUp = () => {
@@ -198,34 +190,14 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
       startResizeRef.current = null;
       window.removeEventListener('mousemove', handleResizeMouseMove);
       window.removeEventListener('mouseup', handleResizeMouseUp);
-      onLayoutChange(currentLayoutRef.current);
     };
 
     window.addEventListener('mousemove', handleResizeMouseMove);
     window.addEventListener('mouseup', handleResizeMouseUp);
   };
 
-  const handleResetSize = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    isManuallyResizedRef.current = false;
-    const updated = {
-      ...currentLayout,
-      width: minSize.width,
-      height: minSize.height,
-    };
-    setCurrentLayout(updated);
-    currentLayoutRef.current = updated;
-    onLayoutChange(updated);
-  };
-
   const leftPercent = (currentLayout.x / 1920) * 100;
   const topPercent = (currentLayout.y / 1080) * 100;
-
-  // Calculate scale factors so making the box larger scales up the inside content to fill the dragbox!
-  const baseW = minSize.width || defaultWidth;
-  const baseH = minSize.height || defaultHeight;
-  const scaleX = currentLayout.width / baseW;
-  const scaleY = currentLayout.height / baseH;
 
   return (
     <div
@@ -235,7 +207,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         left: `${leftPercent}%`,
         top: `${topPercent}%`,
         cursor: isEditable ? (isDragging ? 'grabbing' : 'grab') : 'default',
-        transition: isDragging || isResizing ? 'none' : 'all 0.15s ease',
+        transition: isDragging || isResizing ? 'none' : 'all 0.12s ease',
         zIndex: isSelected || isDragging || isResizing ? 100 : 10,
         userSelect: 'none',
       }}
@@ -257,7 +229,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             fontSize: '0.7rem',
             fontWeight: 600,
             boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-            minWidth: '220px',
+            minWidth: '200px',
           }}
         >
           {/* Left: Label */}
@@ -266,25 +238,16 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             <span>{label}</span>
           </div>
 
-          {/* Right: Coordinates + Icon-only Reset Button */}
+          {/* Right: Coordinates */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '0.7rem', opacity: 0.95, fontFamily: 'var(--font-mono)' }}>
               X:{currentLayout.x}px Y:{currentLayout.y}px ({currentLayout.width}×{currentLayout.height}px)
             </span>
-
-            <button
-              className="reset-size-btn"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={handleResetSize}
-              title="Reset Widget Size to Content Natural PX"
-            >
-              <RotateCcw size={13} />
-            </button>
           </div>
         </div>
       )}
 
-      {/* Embedded Content Container */}
+      {/* Embedded Content Container - ALWAYS Auto-Wraps Content Bounds */}
       <div
         style={{
           width: `${currentLayout.width}px`,
@@ -294,17 +257,16 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           background: isEditable ? 'rgba(23, 17, 44, 0.4)' : 'transparent',
           position: 'relative',
           boxSizing: 'border-box',
-          overflow: 'hidden',
+          display: 'inline-block',
         }}
       >
-        {/* Scaled Inner Content Wrapper */}
+        {/* Inner Content Wrapper */}
         <div
           ref={innerContentRef}
           style={{
-            width: `${baseW}px`,
-            height: `${baseH}px`,
-            transform: `scale(${scaleX}, ${scaleY})`,
-            transformOrigin: 'top left',
+            width: 'max-content',
+            height: 'max-content',
+            minWidth: '100%',
             pointerEvents: isEditable ? 'none' : 'auto',
           }}
         >
@@ -317,10 +279,10 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             onMouseDown={handleResizeMouseDown}
             style={{
               position: 'absolute',
-              right: '4px',
-              bottom: '4px',
-              width: '22px',
-              height: '22px',
+              right: '-6px',
+              bottom: '-6px',
+              width: '20px',
+              height: '20px',
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
               border: '2px solid #ffffff',
@@ -328,12 +290,12 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0 12px rgba(6, 182, 212, 1)',
+              boxShadow: '0 0 10px rgba(6, 182, 212, 1)',
               zIndex: 150,
             }}
-            title="Click and drag to resize width & height (in PX)"
+            title="Click and drag to scale widget (fonts & media)"
           >
-            <Maximize2 size={11} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
+            <Maximize2 size={10} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
           </div>
         )}
       </div>
