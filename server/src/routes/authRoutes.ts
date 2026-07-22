@@ -1,157 +1,150 @@
 import express from 'express';
-import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Helper for hashing passwords
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
+const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID!;
+const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET!;
+const APP_URL = process.env.APP_URL || 'http://localhost:4000';
+// CLIENT_URL is where the React app lives — same as APP_URL in production,
+// but http://localhost:5173 in local dev (Vite dev server)
+const CLIENT_URL = process.env.CLIENT_URL || APP_URL;
+const JWT_SECRET = process.env.JWT_SECRET || 'koboverlay_dev_secret';
+const JWT_EXPIRY = '24h';
 
-// POST /api/auth/register
-router.post('/register', async (req: express.Request, res: express.Response) => {
+// GET /api/auth/twitch
+// Redirects the browser to the Twitch OAuth authorization page
+router.get('/twitch', (_req, res) => {
+  const params = new URLSearchParams({
+    client_id: TWITCH_CLIENT_ID,
+    redirect_uri: `${APP_URL}/api/auth/twitch/callback`,
+    response_type: 'code',
+    scope: 'user:read:email',
+  });
+
+  res.redirect(`https://id.twitch.tv/oauth2/authorize?${params.toString()}`);
+});
+
+// GET /api/auth/twitch/callback
+// Twitch redirects here after the user authorizes the app
+router.get('/twitch/callback', async (req, res) => {
+  const code = req.query.code as string;
+
+  if (!code) {
+    return res.redirect(`${APP_URL}/?error=twitch_auth_denied`);
+  }
+
   try {
-    const { username, email, password } = req.body;
+    // Exchange authorization code for access token
+    const tokenRes = await fetch('https://id.twitch.tv/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: TWITCH_CLIENT_ID,
+        client_secret: TWITCH_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: `${APP_URL}/api/auth/twitch/callback`,
+      }),
+    });
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'Username, email, and password are required.' });
+    const tokenData = await tokenRes.json() as { access_token: string };
+
+    if (!tokenData.access_token) {
+      return res.redirect(`${APP_URL}/?error=twitch_token_failed`);
     }
 
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ username }, { email }],
+    // Fetch Twitch user profile
+    const userRes = await fetch('https://api.twitch.tv/helix/users', {
+      headers: {
+        'Authorization': `Bearer ${tokenData.access_token}`,
+        'Client-Id': TWITCH_CLIENT_ID,
       },
     });
 
-    if (existingUser) {
-      return res.status(400).json({ error: 'Username or email is already taken.' });
+    const userData = await userRes.json() as {
+      data: Array<{
+        id: string;
+        login: string;
+        display_name: string;
+        email?: string;
+        profile_image_url: string;
+      }>;
+    };
+
+    const twitchUser = userData.data[0];
+    if (!twitchUser) {
+      return res.redirect(`${APP_URL}/?error=twitch_user_failed`);
     }
 
-    const passwordHash = hashPassword(password);
-    const user = await prisma.user.create({
-      data: {
-        username,
-        email,
-        passwordHash,
-        emailConfirmed: true, // Auto-confirmed in dev demo
-        config: {
-          create: {},
-        },
+    // Upsert user record — create on first login, update on return
+    const user = await prisma.user.upsert({
+      where: { twitchId: twitchUser.id },
+      create: {
+        twitchId: twitchUser.id,
+        username: twitchUser.login,
+        twitchDisplayName: twitchUser.display_name,
+        twitchProfileImage: twitchUser.profile_image_url,
+        email: twitchUser.email || null,
+        config: { create: {} },
+      },
+      update: {
+        username: twitchUser.login,
+        twitchDisplayName: twitchUser.display_name,
+        twitchProfileImage: twitchUser.profile_image_url,
+        email: twitchUser.email || null,
       },
     });
 
-    return res.json({
-      success: true,
-      message: 'Account registered successfully!',
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        overlayToken: user.overlayToken,
-      },
-    });
+    // Issue signed JWT
+    const jwtPayload = {
+      userId: user.id,
+      overlayToken: user.overlayToken,
+      username: user.username,
+      displayName: user.twitchDisplayName,
+      profileImage: user.twitchProfileImage,
+    };
+
+    const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+
+    // Redirect to the client app (Vite dev: 5173, production: same origin as API)
+    res.redirect(`${CLIENT_URL}/studio?jwt=${encodeURIComponent(token)}`);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Failed to register account.' });
+    console.error('Twitch OAuth callback error:', err);
+    res.redirect(`${APP_URL}/?error=server_error`);
   }
 });
 
-// POST /api/auth/login
-router.post('/login', async (req: express.Request, res: express.Response) => {
+// GET /api/auth/me
+// Returns the current user decoded from the Authorization: Bearer <jwt> header
+// Used by the client on page load to rehydrate the session
+router.get('/me', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided.' });
+  }
+
+  const token = authHeader.slice(7);
   try {
-    const { usernameOrEmail, password } = req.body;
-
-    if (!usernameOrEmail || !password) {
-      return res.status(400).json({ error: 'Username/Email and password are required.' });
-    }
-
-    const passwordHash = hashPassword(password);
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
-      },
-    });
-
-    if (!user || user.passwordHash !== passwordHash) {
-      return res.status(401).json({ error: 'Invalid username/email or password.' });
-    }
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      overlayToken: string;
+      username: string;
+      displayName: string;
+      profileImage: string;
+    };
 
     return res.json({
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        overlayToken: user.overlayToken,
-      },
+      id: decoded.userId,
+      overlayToken: decoded.overlayToken,
+      username: decoded.username,
+      displayName: decoded.displayName,
+      profileImage: decoded.profileImage,
     });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Failed to log in.' });
-  }
-});
-
-// POST /api/auth/reset-password-request
-router.post('/reset-password-request', async (req: express.Request, res: express.Response) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required.' });
-
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return res.json({ success: true, message: 'If an account exists, a reset link has been dispatched.' });
-    }
-
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { resetToken, resetTokenExpiry },
-    });
-
-    return res.json({
-      success: true,
-      message: 'Password reset link sent to your email.',
-      resetTokenDemo: resetToken,
-    });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Password reset request failed.' });
-  }
-});
-
-// POST /api/auth/reset-password
-router.post('/reset-password', async (req: express.Request, res: express.Response) => {
-  try {
-    const { resetToken, newPassword } = req.body;
-    if (!resetToken || !newPassword) {
-      return res.status(400).json({ error: 'Reset token and new password are required.' });
-    }
-
-    const user = await prisma.user.findFirst({
-      where: {
-        resetToken,
-        resetTokenExpiry: { gt: new Date() },
-      },
-    });
-
-    if (!user) {
-      return res.status(400).json({ error: 'Invalid or expired password reset token.' });
-    }
-
-    const passwordHash = hashPassword(newPassword);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        passwordHash,
-        resetToken: null,
-        resetTokenExpiry: null,
-      },
-    });
-
-    return res.json({ success: true, message: 'Password has been reset successfully. You can now log in.' });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Password reset failed.' });
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired session. Please log in again.' });
   }
 });
 

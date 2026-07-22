@@ -1,36 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { Tv, Sparkles, ShieldCheck, Zap, Layers, LogIn, ArrowRight, UserCheck } from 'lucide-react';
-import { AuthModal } from '../components/AuthModal';
+import { Tv, Sparkles, ShieldCheck, Zap, Layers, LogIn, ArrowRight } from 'lucide-react';
+import { TwitchLoginModal } from '../components/AuthModal';
+
+interface KobUser {
+  id: string;
+  username: string;
+  displayName: string;
+  profileImage: string;
+  overlayToken: string;
+}
+
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const Landing: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ id: string; username: string; email: string; overlayToken: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<KobUser | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('koboverlay_user');
-    if (saved) {
-      try {
-        setCurrentUser(JSON.parse(saved));
-      } catch (e) {}
+    // Pick up JWT from redirect after Twitch OAuth
+    const urlParams = new URLSearchParams(window.location.search);
+    const jwt = urlParams.get('jwt');
+    const error = urlParams.get('error');
+
+    if (error) {
+      setAuthError(error);
+      setIsAuthModalOpen(true);
+      window.history.replaceState({}, '', '/');
+      return;
+    }
+
+    if (jwt) {
+      localStorage.setItem('koboverlay_jwt', jwt);
+      window.history.replaceState({}, '', '/');
+    }
+
+    // Validate stored JWT against /api/auth/me
+    const storedJwt = localStorage.getItem('koboverlay_jwt');
+    if (storedJwt) {
+      fetch(`${API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${storedJwt}` },
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.id) {
+            setCurrentUser(data as KobUser);
+          } else {
+            // Token invalid or expired — clear it
+            localStorage.removeItem('koboverlay_jwt');
+          }
+        })
+        .catch(() => localStorage.removeItem('koboverlay_jwt'));
     }
   }, []);
 
-  const handleAuthSuccess = (user: { id: string; username: string; email: string; overlayToken: string }) => {
-    localStorage.setItem('koboverlay_user', JSON.stringify(user));
-    localStorage.setItem('koboverlay_active_token', user.overlayToken);
-    setCurrentUser(user);
-    window.location.href = `/studio?token=${encodeURIComponent(user.overlayToken)}`;
+  const handleSignOut = () => {
+    localStorage.removeItem('koboverlay_jwt');
+    setCurrentUser(null);
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem('koboverlay_user');
-    localStorage.removeItem('koboverlay_active_token');
-    setCurrentUser(null);
+  const goToStudio = () => {
+    const jwt = localStorage.getItem('koboverlay_jwt');
+    window.location.href = `/studio?jwt=${encodeURIComponent(jwt || '')}`;
   };
 
   return (
     <div style={{ minHeight: '100vh', background: '#09090b', color: '#f4f4f5', fontFamily: 'var(--font-sans)', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Header */}
+      {/* Header */}
       <header
         style={{
           padding: '16px 32px',
@@ -41,7 +77,6 @@ export const Landing: React.FC = () => {
           justifyContent: 'space-between',
         }}
       >
-        {/* Aligned Logo Mark */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
@@ -62,18 +97,24 @@ export const Landing: React.FC = () => {
           </span>
         </div>
 
-        {/* Top-Right Account Button System */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {currentUser ? (
             <>
-              <a
-                href={`/studio?token=${encodeURIComponent(currentUser.overlayToken)}`}
+              {/* Twitch avatar */}
+              {currentUser.profileImage && (
+                <img
+                  src={currentUser.profileImage}
+                  alt={currentUser.displayName}
+                  style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #6366f1' }}
+                />
+              )}
+              <button
                 className="studio-btn studio-btn-primary"
-                style={{ textDecoration: 'none' }}
+                onClick={goToStudio}
+                style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                Go to My Studio ({currentUser.username}) <ArrowRight size={14} />
-              </a>
-
+                Go to Studio ({currentUser.displayName}) <ArrowRight size={14} />
+              </button>
               <button className="studio-btn" onClick={handleSignOut} style={{ fontSize: '0.78rem' }}>
                 Sign Out
               </button>
@@ -81,18 +122,18 @@ export const Landing: React.FC = () => {
           ) : (
             <button
               className="studio-btn studio-btn-primary"
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => { setAuthError(null); setIsAuthModalOpen(true); }}
               style={{ padding: '8px 18px', fontSize: '0.88rem' }}
             >
-              <LogIn size={15} /> Sign In / Register
+              <LogIn size={15} /> Sign In with Twitch
             </button>
           )}
         </div>
       </header>
 
-      {/* Main Hero Container */}
+      {/* Main */}
       <main style={{ flex: 1, maxWidth: '960px', width: '100%', margin: '0 auto', padding: '80px 24px', display: 'flex', flexDirection: 'column', gap: '56px' }}>
-        {/* Hero Section */}
+        {/* Hero */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
           <div
             style={{
@@ -118,6 +159,16 @@ export const Landing: React.FC = () => {
           <p style={{ fontSize: '1.08rem', color: '#a1a1aa', maxWidth: '640px', lineHeight: 1.6 }}>
             Design sub alerts, goal bars, and custom sponsor graphics in a real-time 1920x1080 studio editor. Share access securely with your moderators and load seamlessly into OBS Studio.
           </p>
+
+          {!currentUser && (
+            <button
+              className="studio-btn studio-btn-primary"
+              onClick={() => { setAuthError(null); setIsAuthModalOpen(true); }}
+              style={{ padding: '12px 28px', fontSize: '1rem', fontWeight: 700, marginTop: '8px' }}
+            >
+              <LogIn size={16} /> Get Started — Sign in with Twitch
+            </button>
+          )}
         </div>
 
         {/* Features Grid */}
@@ -138,7 +189,7 @@ export const Landing: React.FC = () => {
             </div>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px' }}>1-Year Shared Mod Links</h3>
             <p style={{ fontSize: '0.85rem', color: '#a1a1aa', lineHeight: 1.5 }}>
-              Streamers generate 1-year max shared token links for moderators. Revoke or delete token access anytime from your studio.
+              Streamers generate 1-year max shared token links for moderators. Revoke access anytime from your studio.
             </p>
           </div>
 
@@ -153,15 +204,15 @@ export const Landing: React.FC = () => {
           </div>
         </div>
 
-        {/* OBS Setup Steps Card */}
+        {/* OBS Setup Steps */}
         <div style={{ background: '#0c0c0e', border: '1px solid #27272a', borderRadius: '16px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>How OBS Studio Integration Works</h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             <div>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1' }}>STEP 1</div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, marginTop: '2px' }}>Sign In to Studio</div>
-              <p style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '4px' }}>Sign in to position your widgets, set colors, and upload sponsor logos.</p>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, marginTop: '2px' }}>Sign In with Twitch</div>
+              <p style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '4px' }}>One click — no passwords. Sign in to position your widgets, set colors, and upload logos.</p>
             </div>
 
             <div>
@@ -181,14 +232,13 @@ export const Landing: React.FC = () => {
         </div>
       </main>
 
-      {/* Account Auth Modal */}
-      <AuthModal
+      {/* Twitch Login Modal */}
+      <TwitchLoginModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
+        error={authError}
       />
 
-      {/* Footer */}
       <footer style={{ padding: '20px', borderTop: '1px solid #27272a', textAlign: 'center', fontSize: '0.8rem', color: '#71717a' }}>
         KobOverlay Studio • Open-Source Streamer Overlay Platform
       </footer>

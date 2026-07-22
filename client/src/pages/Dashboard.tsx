@@ -63,28 +63,36 @@ const DEFAULT_STUDIO_STATE: StudioState = {
 import { ModTokenManagerModal } from '../components/ModTokenManagerModal';
 
 export const Dashboard: React.FC = () => {
-  // Extract token from URL search query parameter (e.g. /studio?token=XYZ) or path
+  // Resolve overlay token: from JWT redirect, stored JWT, or fall back to demo
   const [token] = useState<string>(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const queryToken = urlParams.get('token');
-    if (queryToken) return queryToken;
 
-    const savedUser = localStorage.getItem('koboverlay_user');
-    if (savedUser) {
+    // JWT passed from Twitch OAuth redirect
+    const jwtParam = urlParams.get('jwt');
+    if (jwtParam) {
+      localStorage.setItem('koboverlay_jwt', jwtParam);
+      window.history.replaceState({}, '', '/studio');
+    }
+
+    // Decode overlayToken from stored JWT payload (middle segment, base64)
+    const storedJwt = jwtParam || localStorage.getItem('koboverlay_jwt');
+    if (storedJwt) {
       try {
-        const parsed = JSON.parse(savedUser);
-        if (parsed.overlayToken) return parsed.overlayToken;
+        const payload = JSON.parse(atob(storedJwt.split('.')[1]));
+        if (payload.overlayToken) return payload.overlayToken;
       } catch (e) {}
     }
 
-    const pathParts = window.location.pathname.split('/');
-    const pathToken = pathParts[pathParts.length - 1];
-    return pathToken && pathToken !== 'studio' ? pathToken : 'demo-streamer-token';
+    return 'demo-streamer-token';
   });
 
-  const [currentUser] = useState<{ id: string; username: string; email: string; overlayToken: string } | null>(() => {
-    const saved = localStorage.getItem('koboverlay_user');
-    return saved ? JSON.parse(saved) : null;
+  const [currentUser, setCurrentUser] = useState<{ id: string; username: string; displayName: string; profileImage: string; overlayToken: string } | null>(() => {
+    const storedJwt = localStorage.getItem('koboverlay_jwt');
+    if (!storedJwt) return null;
+    try {
+      const payload = JSON.parse(atob(storedJwt.split('.')[1]));
+      return { id: payload.userId, username: payload.username, displayName: payload.displayName, profileImage: payload.profileImage, overlayToken: payload.overlayToken };
+    } catch (e) { return null; }
   });
 
   const [socket, setSocket] = useState<Socket | null>(null);

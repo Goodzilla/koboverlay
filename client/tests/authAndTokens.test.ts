@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-describe('Auth & Shared Mod Tokens Logic Tests', () => {
+describe('Twitch OAuth & Shared Mod Tokens Logic Tests', () => {
   it('should calculate 1-year expiration date for shared mod tokens', () => {
     const now = new Date('2026-07-22T14:00:00Z');
     const oneYearLater = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
@@ -36,10 +36,29 @@ describe('Auth & Shared Mod Tokens Logic Tests', () => {
     const sharedToken = {
       token: 'mod_expired',
       revoked: false,
-      expiresAt: new Date(Date.now() - 1000), // Expired
+      expiresAt: new Date(Date.now() - 1000),
     };
 
     const isBypassAllowed = !sharedToken.revoked && new Date() < sharedToken.expiresAt;
     expect(isBypassAllowed).toBe(false);
+  });
+
+  it('should correctly decode JWT payload from base64 (client-side session rehydration)', () => {
+    // Simulate the JWT base64 payload decode that Dashboard.tsx uses
+    const mockPayload = {
+      userId: 'user-123',
+      overlayToken: 'overlay-abc',
+      username: 'goodzilla',
+      displayName: 'Goodzilla',
+      profileImage: 'https://static-cdn.jtvnw.net/user-default.png',
+    };
+
+    const encoded = btoa(JSON.stringify(mockPayload));
+    const decoded = JSON.parse(atob(encoded));
+
+    expect(decoded.userId).toBe('user-123');
+    expect(decoded.overlayToken).toBe('overlay-abc');
+    expect(decoded.username).toBe('goodzilla');
+    expect(decoded.displayName).toBe('Goodzilla');
   });
 });

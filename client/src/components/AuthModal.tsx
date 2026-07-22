@@ -1,138 +1,22 @@
-import React, { useState } from 'react';
-import { LogIn, UserPlus, KeyRound, X, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import React from 'react';
+import { X } from 'lucide-react';
 
-interface AuthModalProps {
+interface TwitchLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (user: { id: string; username: string; email: string; overlayToken: string }) => void;
+  error?: string | null;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [tab, setTab] = useState<'login' | 'register' | 'forgot'>('login');
+// Twitch brand purple
+const TWITCH_PURPLE = '#9147ff';
 
-  // Form Fields
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [resetToken, setResetToken] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-
-  // Status & Feedback
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
+export const TwitchLoginModal: React.FC<TwitchLoginModalProps> = ({ isOpen, onClose, error }) => {
   if (!isOpen) return null;
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  const API_URL = import.meta.env.VITE_API_URL || '';
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usernameOrEmail: username, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed.');
-
-      onSuccess(data.user);
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Registration failed.');
-
-      setMessage('Account created successfully! Auto-signing in...');
-      setTimeout(() => {
-        onSuccess(data.user);
-        onClose();
-      }, 1000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRequestReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${API_URL}/api/auth/reset-password-request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Request failed.');
-
-      setMessage(`Password reset token generated! (Demo code: ${data.resetTokenDemo})`);
-      setResetToken(data.resetTokenDemo || '');
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirmReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resetToken, newPassword }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Reset failed.');
-
-      setMessage('Password reset successful! Please sign in with your new password.');
-      setTab('login');
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleTwitchLogin = () => {
+    window.location.href = `${API_URL}/api/auth/twitch`;
   };
 
   return (
@@ -143,7 +27,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.8)',
+        background: 'rgba(0, 0, 0, 0.82)',
         backdropFilter: 'blur(4px)',
         zIndex: 1000,
         display: 'flex',
@@ -156,254 +40,89 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
       <div
         style={{
           width: '100%',
-          maxWidth: '420px',
+          maxWidth: '400px',
           background: '#121215',
           border: '1px solid #27272a',
           borderRadius: '16px',
-          padding: '28px',
+          padding: '32px 28px',
           boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
           color: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          gap: '24px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header & Tabs */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => { setTab('login'); setError(null); setMessage(null); }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: tab === 'login' ? '#ffffff' : '#71717a',
-                fontSize: '1rem',
-                fontWeight: tab === 'login' ? 800 : 500,
-                cursor: 'pointer',
-                borderBottom: tab === 'login' ? '2px solid #6366f1' : 'none',
-                paddingBottom: '4px',
-              }}
-            >
-              Sign In
-            </button>
-
-            <button
-              onClick={() => { setTab('register'); setError(null); setMessage(null); }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: tab === 'register' ? '#ffffff' : '#71717a',
-                fontSize: '1rem',
-                fontWeight: tab === 'register' ? 800 : 500,
-                cursor: 'pointer',
-                borderBottom: tab === 'register' ? '2px solid #6366f1' : 'none',
-                paddingBottom: '4px',
-              }}
-            >
-              Register
-            </button>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>
+              Sign in to KobOverlay
+            </h2>
+            <p style={{ fontSize: '0.82rem', color: '#71717a', margin: '4px 0 0 0' }}>
+              Connect your Twitch account to access the studio
+            </p>
           </div>
-
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', display: 'flex' }}
+            style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', display: 'flex', padding: '2px' }}
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Feedback Messages */}
+        {/* Error Banner */}
         {error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '8px', padding: '10px 12px', color: '#ef4444', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={14} /> {error}
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            fontSize: '0.82rem',
+            color: '#f87171',
+          }}>
+            {error === 'twitch_auth_denied' && 'Twitch authorization was cancelled.'}
+            {error === 'twitch_token_failed' && 'Failed to connect to Twitch. Please try again.'}
+            {error === 'twitch_user_failed' && 'Could not retrieve your Twitch profile. Please try again.'}
+            {error === 'server_error' && 'A server error occurred. Please try again.'}
+            {!['twitch_auth_denied', 'twitch_token_failed', 'twitch_user_failed', 'server_error'].includes(error) && error}
           </div>
         )}
 
-        {message && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '8px', padding: '10px 12px', color: '#10b981', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle size={14} /> {message}
-          </div>
-        )}
+        {/* Twitch Login Button */}
+        <button
+          onClick={handleTwitchLogin}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            background: TWITCH_PURPLE,
+            border: 'none',
+            borderRadius: '10px',
+            padding: '13px 20px',
+            color: '#ffffff',
+            fontSize: '0.95rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'opacity 0.15s',
+            width: '100%',
+            letterSpacing: '-0.2px',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+        >
+          {/* Twitch Logo SVG */}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
+          </svg>
+          Continue with Twitch
+        </button>
 
-        {/* 1. SIGN IN FORM */}
-        {tab === 'login' && (
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                Username or Email
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username or email"
-                className="studio-input"
-                required
-              />
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa' }}>Password</label>
-                <button
-                  type="button"
-                  onClick={() => { setTab('forgot'); setError(null); setMessage(null); }}
-                  style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: '0.75rem', cursor: 'pointer' }}
-                >
-                  Forgot Password?
-                </button>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="studio-input"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="studio-btn studio-btn-primary"
-              style={{ padding: '10px', fontSize: '0.9rem', fontWeight: 700, width: '100%', justifyContent: 'center' }}
-            >
-              <LogIn size={15} /> {loading ? 'Signing In...' : 'Sign In to Studio'}
-            </button>
-          </form>
-        )}
-
-        {/* 2. REGISTER FORM */}
-        {tab === 'register' && (
-          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. PixelStreamer"
-                className="studio-input"
-                required
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="streamer@example.com"
-                className="studio-input"
-                required
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create password"
-                className="studio-input"
-                required
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm password"
-                className="studio-input"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="studio-btn studio-btn-primary"
-              style={{ padding: '10px', fontSize: '0.9rem', fontWeight: 700, width: '100%', justifyContent: 'center' }}
-            >
-              <UserPlus size={15} /> {loading ? 'Creating Account...' : 'Create Streamer Account'}
-            </button>
-          </form>
-        )}
-
-        {/* 3. PASSWORD RESET FORM */}
-        {tab === 'forgot' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <form onSubmit={handleRequestReset} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                  Account Email
-                </label>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="streamer@example.com"
-                    className="studio-input"
-                    required
-                  />
-                  <button type="submit" className="studio-btn studio-btn-primary" style={{ padding: '8px 12px', fontSize: '0.8rem' }}>
-                    Send Code
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            <form onSubmit={handleConfirmReset} style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid #27272a', paddingTop: '12px' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                  Reset Token
-                </label>
-                <input
-                  type="text"
-                  value={resetToken}
-                  onChange={(e) => setResetToken(e.target.value)}
-                  placeholder="Paste reset token"
-                  className="studio-input"
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="studio-input"
-                  required
-                />
-              </div>
-
-              <button type="submit" className="studio-btn studio-btn-primary" style={{ padding: '10px', fontSize: '0.85rem', fontWeight: 700 }}>
-                <KeyRound size={14} /> Update Password
-              </button>
-            </form>
-          </div>
-        )}
+        {/* Fine print */}
+        <p style={{ fontSize: '0.75rem', color: '#52525b', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+          By signing in you authorize KobOverlay to read your public Twitch profile (username, display name). No posting or channel management permissions are requested.
+        </p>
       </div>
     </div>
   );

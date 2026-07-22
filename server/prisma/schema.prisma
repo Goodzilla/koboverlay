@@ -8,20 +8,18 @@ generator client {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  overlayToken     String            @unique @default(uuid())
-  twitchId         String?           @unique
-  username         String            @unique
-  email            String            @unique
-  passwordHash     String
-  emailConfirmed   Boolean           @default(false)
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  config           OverlayConfig?
-  alerts           AlertHistory[]
-  sharedTokens     SharedModToken[]
+  id                 String            @id @default(uuid())
+  overlayToken       String            @unique @default(uuid())
+  twitchId           String            @unique
+  username           String            @unique
+  twitchDisplayName  String
+  twitchProfileImage String            @default("")
+  email              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  config             OverlayConfig?
+  alerts             AlertHistory[]
+  sharedTokens       SharedModToken[]
 }
 
 model SharedModToken {
