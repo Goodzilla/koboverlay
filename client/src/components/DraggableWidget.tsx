@@ -39,6 +39,10 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [currentLayout, setCurrentLayout] = useState<WidgetLayout>(layout);
+  const [minSize, setMinSize] = useState<{ width: number; height: number }>({
+    width: defaultWidth,
+    height: defaultHeight,
+  });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
@@ -54,29 +58,30 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     }
   }, [layout, isDragging, isResizing]);
 
-  // Auto-expand drag bounding box to encapsulate content natural height/width if content grows
+  // Measure natural content size to enforce minimum dragbox size
   useEffect(() => {
     if (innerContentRef.current) {
-      const naturalHeight = innerContentRef.current.scrollHeight;
-      const naturalWidth = innerContentRef.current.scrollWidth;
+      const scrollH = innerContentRef.current.scrollHeight;
+      const scrollW = innerContentRef.current.scrollWidth;
 
-      let needsUpdate = false;
-      let newW = currentLayout.width;
-      let newH = currentLayout.height;
+      const baseW = Math.max(defaultWidth, scrollW);
+      const baseH = Math.max(defaultHeight, scrollH);
 
-      if (naturalHeight > currentLayout.height) {
-        newH = Math.ceil(naturalHeight);
-        needsUpdate = true;
-      }
+      setMinSize({ width: baseW, height: baseH });
 
-      if (needsUpdate) {
-        const updated = { ...currentLayout, width: newW, height: newH };
+      // If current layout is smaller than content natural size, update layout height/width to encapsulate it
+      if (currentLayout.width < baseW || currentLayout.height < baseH) {
+        const updated = {
+          ...currentLayout,
+          width: Math.max(currentLayout.width, baseW),
+          height: Math.max(currentLayout.height, baseH),
+        };
         setCurrentLayout(updated);
         currentLayoutRef.current = updated;
         onLayoutChange(updated);
       }
     }
-  }, [children, layout.width, layout.height, onLayoutChange]);
+  }, [children, defaultWidth, defaultHeight]);
 
   const snapValue = (val: number, step = 20) => {
     return Math.round(val / step) * step;
@@ -159,8 +164,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         rawH = snapValue(rawH, 20);
       }
 
-      const minW = 120;
-      const minH = 40;
+      // Enforce minimum size to be the content's natural size
+      const minW = minSize.width;
+      const minH = minSize.height;
       const clampedW = Math.max(minW, Math.min(1920 - currentLayoutRef.current.x, rawW));
       const clampedH = Math.max(minH, Math.min(1080 - currentLayoutRef.current.y, rawH));
 
@@ -188,14 +194,10 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
 
   const handleResetSize = (e: React.MouseEvent) => {
     e.stopPropagation();
-    let resetH = defaultHeight;
-    if (innerContentRef.current) {
-      resetH = Math.max(defaultHeight, innerContentRef.current.scrollHeight);
-    }
     const updated = {
       ...currentLayout,
-      width: defaultWidth,
-      height: resetH,
+      width: minSize.width,
+      height: minSize.height,
     };
     setCurrentLayout(updated);
     currentLayoutRef.current = updated;
@@ -204,6 +206,12 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
 
   const leftPercent = (currentLayout.x / 1920) * 100;
   const topPercent = (currentLayout.y / 1080) * 100;
+
+  // Calculate scale factors so making the box larger scales up the inside content to fill the dragbox!
+  const baseW = minSize.width || defaultWidth;
+  const baseH = minSize.height || defaultHeight;
+  const scaleX = currentLayout.width / baseW;
+  const scaleY = currentLayout.height / baseH;
 
   return (
     <div
@@ -254,7 +262,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
               className="reset-size-btn"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={handleResetSize}
-              title="Reset Widget Size to Default PX"
+              title="Reset Widget Size to Content Min PX"
             >
               <RotateCcw size={13} />
             </button>
@@ -272,15 +280,17 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           background: isEditable ? 'rgba(23, 17, 44, 0.4)' : 'transparent',
           position: 'relative',
           boxSizing: 'border-box',
-          overflow: 'visible',
+          overflow: 'hidden',
         }}
       >
-        {/* Inner Content Wrapper */}
+        {/* Scaled Inner Content Wrapper */}
         <div
           ref={innerContentRef}
           style={{
-            width: '100%',
-            height: '100%',
+            width: `${baseW}px`,
+            height: `${baseH}px`,
+            transform: `scale(${scaleX}, ${scaleY})`,
+            transformOrigin: 'top left',
             pointerEvents: isEditable ? 'none' : 'auto',
           }}
         >
