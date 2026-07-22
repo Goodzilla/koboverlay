@@ -1,4 +1,4 @@
-# Multi-Stage Production Dockerfile for StreamPulse
+# Multi-Stage Production Dockerfile for KobOverlay
 
 # --- Stage 1: Build Frontend Client ---
 FROM node:18-alpine AS client-builder
@@ -21,6 +21,9 @@ RUN npm run build
 # --- Stage 3: Runner ---
 FROM node:18-alpine AS runner
 WORKDIR /app
+
+# Install OpenSSL — required by Prisma on Alpine Linux
+RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 ENV PORT=4000
