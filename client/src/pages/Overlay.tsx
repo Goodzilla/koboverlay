@@ -52,7 +52,8 @@ export const Overlay: React.FC = () => {
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
-    // Set body transparent for OBS Browser Source
+    // Set body & html transparent for OBS Browser Source
+    document.documentElement.classList.add('overlay-mode');
     document.body.classList.add('overlay-mode');
 
     // Extract token from URL path if present e.g. /overlay/custom-token
@@ -92,6 +93,7 @@ export const Overlay: React.FC = () => {
     });
 
     return () => {
+      document.documentElement.classList.remove('overlay-mode');
       document.body.classList.remove('overlay-mode');
       socket.disconnect();
     };
