@@ -1,6 +1,20 @@
 # KobOverlay Deployment Guide
 
-KobOverlay is optimized for low-cost ($0–$5/mo) or free deployment across modern PaaS platforms and single VPS environments.
+KobOverlay is optimized for low-cost ($0-$5/mo) or free deployment across modern PaaS platforms and single VPS environments.
+
+---
+
+## Prerequisites — Twitch Developer Application
+
+Before deploying, you must register a Twitch Developer Application at [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps):
+
+1. Click **Register Your Application**.
+2. Set **Name** to `KobOverlay` (or your preferred name).
+3. Add **OAuth Redirect URLs**:
+   - `https://your-app.onrender.com/api/auth/twitch/callback` (production)
+   - `http://localhost:4000/api/auth/twitch/callback` (local dev)
+4. Set **Category** to `Other`.
+5. Click **Create** and note your **Client ID** and **Client Secret**.
 
 ---
 
@@ -10,12 +24,21 @@ KobOverlay is optimized for low-cost ($0–$5/mo) or free deployment across mode
 1. Fork or push this repository to GitHub.
 2. Go to [Render Dashboard](https://dashboard.render.com/) -> **New Web Service**.
 3. Connect your GitHub repository.
-4. Select **Docker** environment (Render will automatically detect the root `Dockerfile`).
-5. Set Environment Variables:
-   - `PORT`: `4000`
-   - `NODE_ENV`: `production`
-   - `DATABASE_URL`: `file:./dev.db` (or attach a persistent disk volume `/data/dev.db`)
-6. Click **Deploy**. Render will build the container and provide your live URL (e.g. `https://koboverlay.onrender.com`).
+4. Select **Docker** environment (Render automatically detects the root `Dockerfile`).
+5. Set the following Environment Variables:
+
+| Variable | Value |
+| :--- | :--- |
+| `PORT` | `4000` |
+| `NODE_ENV` | `production` |
+| `DATABASE_URL` | `file:./dev.db` |
+| `JWT_SECRET` | any long random string |
+| `TWITCH_CLIENT_ID` | your Twitch app Client ID |
+| `TWITCH_CLIENT_SECRET` | your Twitch app Client Secret |
+| `APP_URL` | `https://your-app.onrender.com` |
+| `CLIENT_URL` | `https://your-app.onrender.com` |
+
+6. Click **Deploy**. Render builds the container and provides your live HTTPS URL.
 
 ---
 
@@ -27,6 +50,10 @@ KobOverlay includes a production `Dockerfile` and `docker-compose.yml`.
 # Clone on your VPS
 git clone https://github.com/Goodzilla/koboverlay.git
 cd koboverlay
+
+# Copy and fill in your environment variables
+cp server/.env.example server/.env
+# Edit server/.env with your values
 
 # Launch container
 docker-compose up -d --build

@@ -12,11 +12,14 @@ KobOverlay is structured as a full-stack monorepo:
 /
 ├── server/             # Express API, Socket.io Server, Prisma Schema & Vitest unit tests
 │   ├── prisma/         # Prisma DB schema & migrations
-│   ├── src/            # Express controllers, socket rooms, services
+│   ├── src/
+│   │   ├── routes/     # authRoutes (Twitch OAuth + JWT), tokenRoutes, overlayRoutes
+│   │   ├── services/   # alertQueueService, twitchService
+│   │   └── sockets/    # overlaySocket (Socket.io room management)
 │   └── tests/          # Vitest backend tests
-├── client/             # React Vite Client (Dashboard & OBS Overlay)
-│   ├── src/components  # Reusable UI & Overlay widgets
-│   ├── src/pages       # Dashboard and OBS Overlay views
+├── client/             # React Vite Client (Studio Dashboard & OBS Overlay)
+│   ├── src/components/ # DraggableWidget, LayerTree, SubAlertWidget, SubGoalWidget, AuthModal
+│   ├── src/pages/      # Landing (Twitch login), Dashboard (Studio), Overlay (OBS source)
 │   └── tests/          # Vitest client component tests
 ├── Dockerfile          # Multi-stage production container build
 ├── docker-compose.yml  # Local container orchestrator
@@ -28,12 +31,20 @@ KobOverlay is structured as a full-stack monorepo:
 ## Rules for Contributions & AI Coding Assistants
 
 When adding features or submitting pull requests:
-1. **Always write unit tests** for new socket events, API endpoints, or React widgets (`npm test`).
-2. **Keep overlay components lightweight** and free of heavy external dependencies to preserve low OBS CPU usage.
-3. **Preserve dynamic CSS keyframes & glassmorphic styling**. Avoid bloated third-party CSS libraries.
-4. **Update `ARCHITECTURE.md`** whenever modifying server-client event protocols or database models.
-5. **All UI text and documentation must be written in 100% English** at all times.
-6. Ensure code builds cleanly without TypeScript errors before committing.
+
+1. **All UI text and documentation must be in 100% English** at all times. No non-English strings in labels, buttons, tooltips, dropdowns, or placeholders.
+2. **Never commit secrets**. `server/.env` is gitignored. Use `server/.env.example` as a template for documentation.
+3. **Always write unit tests** for new socket events, API endpoints, or React widgets (`npm test`).
+4. **Keep overlay components lightweight** and free of heavy external dependencies to preserve low OBS CPU usage.
+5. **Preserve dynamic CSS keyframes & glassmorphic styling**. Avoid bloated third-party CSS libraries.
+6. **Update `ARCHITECTURE.md`** whenever modifying server-client event protocols, database models, or the auth flow.
+7. Ensure code builds cleanly without TypeScript errors before committing.
+
+---
+
+## Local Development Setup
+
+See [README.md](./README.md) for the full setup guide including Twitch Developer Application creation.
 
 ---
 
