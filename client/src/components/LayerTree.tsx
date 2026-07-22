@@ -206,19 +206,35 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
 
                   {/* Form Controls by Widget Type */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* Rename Widget Input */}
+                    {/* 1. Widget Layer Label (Sidebar & Dragbar Identifier) */}
                     <div>
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                        Widget Name
+                        Widget Layer Name (Sidebar & Dragbar)
                       </label>
                       <input
                         type="text"
                         value={widget.label}
-                        onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value }, e.target.value)}
+                        onChange={(e) => onUpdateWidgetConfig(widget.id, {}, e.target.value)}
                         className="studio-input"
-                        placeholder="Widget Name"
+                        placeholder="e.g. Top Right Sub Goal"
                       />
                     </div>
+
+                    {/* 2. Display Text (On Stream Content) */}
+                    {widget.type !== 'customImage' && (
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                          Display Text (On Stream Content)
+                        </label>
+                        <input
+                          type="text"
+                          value={widget.config.title !== undefined ? widget.config.title : 'Monthly Sub Goal'}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value })}
+                          className="studio-input"
+                          placeholder="e.g. Monthly Sub Goal"
+                        />
+                      </div>
+                    )}
 
                     {/* Text Color & Font Size Controls */}
                     {widget.type !== 'customImage' && (

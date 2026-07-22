@@ -263,7 +263,7 @@ export const Dashboard: React.FC = () => {
         if (w.id !== id) return w;
         return {
           ...w,
-          label: newLabel !== undefined ? newLabel : newConfig.title || w.label,
+          label: newLabel !== undefined ? newLabel : w.label,
           config: { ...w.config, ...newConfig },
         };
       }),
