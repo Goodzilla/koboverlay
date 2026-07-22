@@ -197,6 +197,7 @@ export const Overlay: React.FC = () => {
                         fontSize: widget.config.fontSize,
                         borderRadius: widget.config.borderRadius,
                         imageUrl: widget.config.imageUrl || currentAlert.imageUrl,
+                        imageSize: widget.config.imageSize || currentAlert.imageSize,
                         customTextTemplate: widget.config.customTextTemplate,
                       }
                     : null

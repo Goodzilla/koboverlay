@@ -503,6 +503,7 @@ export const Dashboard: React.FC = () => {
                               fontSize: widget.config.fontSize,
                               borderRadius: widget.config.borderRadius,
                               imageUrl: widget.config.imageUrl,
+                              imageSize: widget.config.imageSize,
                               customTextTemplate: widget.config.customTextTemplate,
                             }
                           : null

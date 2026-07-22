@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles, Crown, Gift } from 'lucide-react';
 
 export interface AlertData {
   id: string;
@@ -15,6 +14,7 @@ export interface AlertData {
   fontSize?: number;
   borderRadius?: number;
   imageUrl?: string;
+  imageSize?: number;
   customTextTemplate?: string;
 }
 
@@ -55,6 +55,7 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
   const bgColor = alert.backgroundColor || '#18181b';
   const txtColor = alert.textColor || '#ffffff';
   const fSize = alert.fontSize || 18;
+  const imgSize = alert.imageSize || 80;
   const radius = alert.borderRadius !== undefined ? alert.borderRadius : 12;
 
   const getTierLabel = () => {
@@ -86,8 +87,10 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
       className={animState === 'enter' ? 'animate-alert-enter' : 'animate-alert-exit'}
       style={{
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        gap: '16px',
+        justifyContent: 'center',
+        gap: '8px',
         padding: '12px 18px',
         borderRadius: `${radius}px`,
         background: bgColor,
@@ -97,42 +100,58 @@ export const SubAlertWidget: React.FC<SubAlertWidgetProps> = ({ alert, onAnimati
         height: '100%',
         boxSizing: 'border-box',
         color: txtColor,
+        textAlign: 'center',
       }}
     >
-      {/* Custom Media / Badge Icon */}
-      <div
-        style={{
-          width: `${fSize * 2.4}px`,
-          height: `${fSize * 2.4}px`,
-          borderRadius: `${Math.max(4, radius - 4)}px`,
-          background: `${accentColor}20`,
-          border: `1px solid ${accentColor}60`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          flexShrink: 0,
-        }}
-      >
-        {alert.imageUrl ? (
-          <img src={alert.imageUrl} alt="Alert Media" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : alert.type === 'subgift' ? (
-          <Gift size={fSize * 1.3} color={accentColor} />
-        ) : alert.months && alert.months > 3 ? (
-          <Crown size={fSize * 1.3} color={accentColor} />
-        ) : (
-          <Sparkles size={fSize * 1.3} color={accentColor} />
-        )}
-      </div>
+      {/* Uploaded / Custom Image ABOVE the text */}
+      {alert.imageUrl && (
+        <div
+          style={{
+            height: `${imgSize}px`,
+            maxHeight: '200px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          <img
+            src={alert.imageUrl}
+            alt="Alert Media"
+            style={{
+              height: '100%',
+              maxWidth: '100%',
+              objectFit: 'contain',
+              borderRadius: '6px',
+            }}
+          />
+        </div>
+      )}
 
-      {/* Content Info */}
-      <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
-        <div style={{ fontSize: `${fSize}px`, fontWeight: 800, color: txtColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {/* Alert Text Content */}
+      <div style={{ width: '100%', minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: `${fSize}px`,
+            fontWeight: 800,
+            color: txtColor,
+            lineHeight: 1.2,
+            wordBreak: 'break-word',
+          }}
+        >
           {getFormattedMessage()}
         </div>
 
         {alert.message && (
-          <div style={{ fontSize: `${Math.max(11, fSize - 6)}px`, color: txtColor, opacity: 0.8, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div
+            style={{
+              fontSize: `${Math.max(11, fSize - 6)}px`,
+              color: txtColor,
+              opacity: 0.8,
+              marginTop: '4px',
+              wordBreak: 'break-word',
+            }}
+          >
             "{alert.message}"
           </div>
         )}

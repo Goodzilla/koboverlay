@@ -24,6 +24,7 @@ export interface WidgetInstance {
   config: {
     title?: string;
     imageUrl?: string;
+    imageSize?: number;
     primaryColor?: string;
     backgroundColor?: string;
     textColor?: string;
@@ -311,6 +312,26 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                         </label>
                       </div>
                     </div>
+
+                    {/* Image Size Slider (when custom image is set or for alert) */}
+                    {(widget.type === 'subAlert' || widget.config.imageUrl) && (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Media Height (Image / GIF)</label>
+                          <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
+                            {widget.config.imageSize !== undefined ? widget.config.imageSize : 80}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="30"
+                          max="200"
+                          value={widget.config.imageSize !== undefined ? widget.config.imageSize : 80}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { imageSize: Number(e.target.value) })}
+                          style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
+                        />
+                      </div>
+                    )}
 
                     {/* Background Color & Transparent Toggle */}
                     <div>
