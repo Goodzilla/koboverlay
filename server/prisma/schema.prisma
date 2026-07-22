@@ -1,0 +1,45 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String         @id @default(uuid())
+  overlayToken String         @unique @default(uuid())
+  twitchId     String?        @unique
+  username     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  config       OverlayConfig?
+  alerts       AlertHistory[]
+}
+
+model OverlayConfig {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  primaryColor   String   @default("#7c3aed") // Dynamic purple gradient
+  alertDuration  Int      @default(5000) // In milliseconds
+  soundEnabled   Boolean  @default(true)
+  soundVolume    Float    @default(0.8)
+  goalTitle      String   @default("Sub Goal")
+  currentSubs    Int      @default(12)
+  targetSubs     Int      @default(50)
+  updatedAt      DateTime @updatedAt
+}
+
+model AlertHistory {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // "sub", "resub", "subgift"
+  username    String
+  tier        String   // "Prime", "1000", "2000", "3000"
+  months      Int?     @default(1)
+  message     String?
+  createdAt   DateTime @default(now())
+}
