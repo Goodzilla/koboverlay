@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Plus,
   Upload,
-  Edit2,
 } from 'lucide-react';
 import { WidgetLayout } from './DraggableWidget';
 
@@ -26,9 +25,12 @@ export interface WidgetInstance {
     title?: string;
     imageUrl?: string;
     primaryColor?: string;
+    backgroundColor?: string;
+    borderRadius?: number;
     currentSubs?: number;
     targetSubs?: number;
     alertDuration?: number;
+    customTextTemplate?: string;
   };
 }
 
@@ -207,21 +209,19 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
                         Widget Name
                       </label>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          value={widget.label}
-                          onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value }, e.target.value)}
-                          className="studio-input"
-                          placeholder="Widget Name"
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        value={widget.label}
+                        onChange={(e) => onUpdateWidgetConfig(widget.id, { title: e.target.value }, e.target.value)}
+                        className="studio-input"
+                        placeholder="Widget Name"
+                      />
                     </div>
 
-                    {/* Image / GIF Upload & URL for Image and Alert Widgets */}
+                    {/* Image / GIF Upload & Media URL */}
                     <div>
                       <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                        Image / GIF (Upload or Link)
+                        {widget.type === 'subGoal' ? 'Custom Icon / Badge (Upload or Link)' : 'Custom Media / GIF (Upload or Link)'}
                       </label>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <input
@@ -233,7 +233,6 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                           style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', flex: 1 }}
                         />
 
-                        {/* File Upload Trigger */}
                         <input
                           type="file"
                           accept="image/*"
@@ -245,18 +244,70 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                           htmlFor={`file_upload_${widget.id}`}
                           className="studio-btn studio-btn-primary"
                           style={{ padding: '6px 10px', fontSize: '0.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                          title="Upload Image from your computer"
+                          title="Upload Media from your computer"
                         >
                           <Upload size={12} /> Upload
                         </label>
                       </div>
                     </div>
 
-                    {/* Accent Color Picker */}
+                    {/* Background Color & Transparent Toggle */}
+                    <div>
+                      <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                        Background Color
+                      </label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input
+                          type="color"
+                          value={widget.config.backgroundColor === 'transparent' ? '#18181b' : widget.config.backgroundColor || '#18181b'}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { backgroundColor: e.target.value })}
+                          style={{ width: '32px', height: '28px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                        />
+                        <input
+                          type="text"
+                          value={widget.config.backgroundColor || '#18181b'}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { backgroundColor: e.target.value })}
+                          className="studio-input"
+                          style={{ fontSize: '0.75rem', flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          className={`studio-btn ${widget.config.backgroundColor === 'transparent' ? 'studio-btn-active' : ''}`}
+                          onClick={() =>
+                            onUpdateWidgetConfig(widget.id, {
+                              backgroundColor: widget.config.backgroundColor === 'transparent' ? '#18181b' : 'transparent',
+                            })
+                          }
+                          style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                        >
+                          Transparent
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Border Radius Options */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa' }}>Border Radius</label>
+                        <span style={{ fontSize: '0.7rem', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
+                          {widget.config.borderRadius !== undefined ? widget.config.borderRadius : 10}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="40"
+                        value={widget.config.borderRadius !== undefined ? widget.config.borderRadius : 10}
+                        onChange={(e) => onUpdateWidgetConfig(widget.id, { borderRadius: Number(e.target.value) })}
+                        style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
+                      />
+                    </div>
+
+                    {/* Accent Color Picker (for subGoal & subAlert) */}
                     {widget.type !== 'customImage' && (
                       <div>
                         <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
-                          Accent Color
+                          Primary Fill / Accent Color
                         </label>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <input
@@ -276,7 +327,24 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                       </div>
                     )}
 
-                    {/* Sub Goal Specific Inputs */}
+                    {/* Sub Alert Dynamic Text Template */}
+                    {widget.type === 'subAlert' && (
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>
+                          Alert Text Template ({'{username}'}, {'{months}'}, {'{tier}'})
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="{username} subscribed for {months} months ({tier})"
+                          value={widget.config.customTextTemplate || ''}
+                          onChange={(e) => onUpdateWidgetConfig(widget.id, { customTextTemplate: e.target.value })}
+                          className="studio-input"
+                          style={{ fontSize: '0.75rem' }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Sub Goal Current & Target Subs */}
                     {widget.type === 'subGoal' && (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                         <div>

@@ -483,13 +483,36 @@ export const Dashboard: React.FC = () => {
                       currentSubs={widget.config.currentSubs || 0}
                       targetSubs={widget.config.targetSubs || 50}
                       primaryColor={widget.config.primaryColor || '#6366f1'}
+                      backgroundColor={widget.config.backgroundColor || '#18181b'}
+                      borderRadius={widget.config.borderRadius}
+                      imageUrl={widget.config.imageUrl}
                     />
                   )}
 
-                  {widget.type === 'subAlert' && <SubAlertWidget alert={previewAlert} />}
+                  {widget.type === 'subAlert' && (
+                    <SubAlertWidget
+                      alert={
+                        previewAlert
+                          ? {
+                              ...previewAlert,
+                              primaryColor: widget.config.primaryColor || previewAlert.primaryColor,
+                              backgroundColor: widget.config.backgroundColor || '#18181b',
+                              borderRadius: widget.config.borderRadius,
+                              imageUrl: widget.config.imageUrl,
+                              customTextTemplate: widget.config.customTextTemplate,
+                            }
+                          : null
+                      }
+                    />
+                  )}
 
                   {widget.type === 'customImage' && (
-                    <CustomImageWidget imageUrl={widget.config.imageUrl} altText={widget.config.title} />
+                    <CustomImageWidget
+                      imageUrl={widget.config.imageUrl}
+                      altText={widget.config.title}
+                      backgroundColor={widget.config.backgroundColor}
+                      borderRadius={widget.config.borderRadius}
+                    />
                   )}
                 </DraggableWidget>
               );

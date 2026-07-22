@@ -4,11 +4,15 @@ import { Image as ImageIcon } from 'lucide-react';
 interface CustomImageWidgetProps {
   imageUrl?: string;
   altText?: string;
+  backgroundColor?: string;
+  borderRadius?: number;
 }
 
 export const CustomImageWidget: React.FC<CustomImageWidgetProps> = ({
   imageUrl = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80',
   altText = 'Sponsor Logo',
+  backgroundColor = 'transparent',
+  borderRadius = 8,
 }) => {
   const [hasError, setHasError] = useState(false);
 
@@ -22,6 +26,9 @@ export const CustomImageWidget: React.FC<CustomImageWidgetProps> = ({
         justifyContent: 'center',
         position: 'relative',
         overflow: 'hidden',
+        background: backgroundColor,
+        borderRadius: `${borderRadius}px`,
+        boxSizing: 'border-box',
       }}
     >
       {imageUrl && !hasError ? (
@@ -34,6 +41,7 @@ export const CustomImageWidget: React.FC<CustomImageWidgetProps> = ({
             height: '100%',
             objectFit: 'contain',
             pointerEvents: 'none',
+            borderRadius: `${borderRadius}px`,
           }}
         />
       ) : (
@@ -45,9 +53,9 @@ export const CustomImageWidget: React.FC<CustomImageWidgetProps> = ({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#18181b',
+            background: backgroundColor === 'transparent' ? '#18181b' : backgroundColor,
             border: '1px dashed #3f3f46',
-            borderRadius: '8px',
+            borderRadius: `${borderRadius}px`,
             color: '#a1a1aa',
             gap: '6px',
             padding: '12px',

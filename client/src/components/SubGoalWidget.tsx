@@ -6,6 +6,9 @@ interface SubGoalWidgetProps {
   currentSubs: number;
   targetSubs: number;
   primaryColor?: string;
+  backgroundColor?: string;
+  borderRadius?: number;
+  imageUrl?: string;
 }
 
 export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
@@ -13,6 +16,9 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
   currentSubs,
   targetSubs,
   primaryColor = '#6366f1',
+  backgroundColor = '#18181b',
+  borderRadius = 10,
+  imageUrl,
 }) => {
   const percentage = Math.min(100, Math.round((currentSubs / Math.max(1, targetSubs)) * 100));
 
@@ -21,12 +27,13 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: 'center',
         gap: '6px',
-        padding: '12px 16px',
-        borderRadius: '10px',
-        background: '#18181b',
-        border: '1px solid #27272a',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+        padding: '10px 14px',
+        borderRadius: `${borderRadius}px`,
+        background: backgroundColor,
+        border: backgroundColor === 'transparent' ? 'none' : '1px solid #27272a',
+        boxShadow: backgroundColor === 'transparent' ? 'none' : '0 8px 24px rgba(0, 0, 0, 0.4)',
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
@@ -36,23 +43,27 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
       {/* Header Info */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Target size={16} color={primaryColor} />
-          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f4f4f5' }}>{title}</span>
+          {imageUrl ? (
+            <img src={imageUrl} alt="Icon" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+          ) : (
+            <Target size={16} color={primaryColor} />
+          )}
+          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f4f4f5' }}>{title}</span>
         </div>
 
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#a1a1aa', fontFamily: 'var(--font-mono)' }}>
-          <span style={{ color: '#ffffff' }}>{currentSubs}</span> / <span>{targetSubs}</span>
+        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#a1a1aa', fontFamily: 'var(--font-mono)' }}>
+          <span style={{ color: '#ffffff' }}>{currentSubs}</span> / <span>{targetSubs}</span> ({percentage}%)
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Bar Track */}
       <div
         style={{
           width: '100%',
           height: '10px',
-          borderRadius: '6px',
-          background: '#09090b',
-          border: '1px solid #27272a',
+          borderRadius: `${Math.max(2, borderRadius - 4)}px`,
+          background: 'rgba(0, 0, 0, 0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           overflow: 'hidden',
           position: 'relative',
         }}
@@ -61,17 +72,11 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
           style={{
             width: `${percentage}%`,
             height: '100%',
-            borderRadius: '6px',
+            borderRadius: `${Math.max(2, borderRadius - 4)}px`,
             background: primaryColor,
             transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         />
-      </div>
-
-      {/* Subtext Percentage */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#71717a' }}>
-        <span>Target Progress</span>
-        <span style={{ color: '#a1a1aa', fontWeight: 600 }}>{percentage}%</span>
       </div>
     </div>
   );

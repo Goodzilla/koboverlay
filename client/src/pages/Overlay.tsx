@@ -177,15 +177,37 @@ export const Overlay: React.FC = () => {
                 currentSubs={widget.config.currentSubs || 0}
                 targetSubs={widget.config.targetSubs || 50}
                 primaryColor={widget.config.primaryColor || '#6366f1'}
+                backgroundColor={widget.config.backgroundColor || '#18181b'}
+                borderRadius={widget.config.borderRadius}
+                imageUrl={widget.config.imageUrl}
               />
             )}
 
             {widget.type === 'subAlert' && (
-              <SubAlertWidget alert={currentAlert} onAnimationComplete={handleAlertComplete} />
+              <SubAlertWidget
+                alert={
+                  currentAlert
+                    ? {
+                        ...currentAlert,
+                        primaryColor: widget.config.primaryColor || currentAlert.primaryColor,
+                        backgroundColor: widget.config.backgroundColor || '#18181b',
+                        borderRadius: widget.config.borderRadius,
+                        imageUrl: widget.config.imageUrl || currentAlert.imageUrl,
+                        customTextTemplate: widget.config.customTextTemplate,
+                      }
+                    : null
+                }
+                onAnimationComplete={handleAlertComplete}
+              />
             )}
 
             {widget.type === 'customImage' && (
-              <CustomImageWidget imageUrl={widget.config.imageUrl} altText={widget.config.title} />
+              <CustomImageWidget
+                imageUrl={widget.config.imageUrl}
+                altText={widget.config.title}
+                backgroundColor={widget.config.backgroundColor}
+                borderRadius={widget.config.borderRadius}
+              />
             )}
           </DraggableWidget>
         );
