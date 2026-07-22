@@ -21,13 +21,14 @@ export const SubGoalWidget: React.FC<SubGoalWidgetProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
-        padding: '14px 18px',
+        gap: '6px',
+        padding: '12px 16px',
         borderRadius: '10px',
         background: '#18181b',
         border: '1px solid #27272a',
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
         width: '100%',
+        height: '100%',
         boxSizing: 'border-box',
         color: '#ffffff',
       }}

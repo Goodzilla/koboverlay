@@ -38,8 +38,8 @@ const DEFAULT_STUDIO_STATE: StudioState = {
   currentSubs: 14,
   targetSubs: 50,
   layouts: {
-    subGoal: { x: 1300, y: 40, width: 380, height: 100, visible: true },
-    subAlert: { x: 700, y: 380, width: 520, height: 260, visible: true },
+    subGoal: { x: 1300, y: 40, width: 360, height: 68, visible: true },
+    subAlert: { x: 700, y: 380, width: 480, height: 80, visible: true },
   },
 };
 
@@ -434,8 +434,8 @@ export const Dashboard: React.FC = () => {
               id="subGoal"
               label="Sub Goal Bar"
               layout={state.layouts.subGoal}
-              defaultWidth={380}
-              defaultHeight={100}
+              defaultWidth={360}
+              defaultHeight={68}
               isEditable={true}
               isSelected={selectedLayerId === 'subGoal'}
               gridSnap={gridSnap}
@@ -455,8 +455,8 @@ export const Dashboard: React.FC = () => {
               id="subAlert"
               label="Sub Alert Popup"
               layout={state.layouts.subAlert}
-              defaultWidth={520}
-              defaultHeight={260}
+              defaultWidth={480}
+              defaultHeight={80}
               isEditable={true}
               isSelected={selectedLayerId === 'subAlert'}
               gridSnap={gridSnap}

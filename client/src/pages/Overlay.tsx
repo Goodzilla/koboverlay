@@ -10,8 +10,8 @@ interface LayoutState {
 }
 
 const DEFAULT_LAYOUT: LayoutState = {
-  subGoal: { x: 1300, y: 40, width: 380, height: 100 },
-  subAlert: { x: 700, y: 380, width: 520, height: 260 },
+  subGoal: { x: 1300, y: 40, width: 360, height: 68 },
+  subAlert: { x: 700, y: 380, width: 480, height: 80 },
 };
 
 export const Overlay: React.FC = () => {
@@ -135,8 +135,8 @@ export const Overlay: React.FC = () => {
         id="subGoal"
         label="Sub Goal"
         layout={layout.subGoal}
-        defaultWidth={380}
-        defaultHeight={100}
+        defaultWidth={360}
+        defaultHeight={68}
         isEditable={false}
         onLayoutChange={() => {}}
       >
@@ -153,8 +153,8 @@ export const Overlay: React.FC = () => {
         id="subAlert"
         label="Sub Alert"
         layout={layout.subAlert}
-        defaultWidth={520}
-        defaultHeight={260}
+        defaultWidth={480}
+        defaultHeight={80}
         isEditable={false}
         onLayoutChange={() => {}}
       >
