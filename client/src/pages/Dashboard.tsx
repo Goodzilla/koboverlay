@@ -75,7 +75,9 @@ export const Dashboard: React.FC = () => {
     handleCenterWidget,
     handleScaleWidget,
     handleResetAllLayouts,
-  } = useStudioState();
+  } = useStudioState(token, socket);
+
+
 
   const handleEmitAlert = useCallback((alert: AlertData) => {
     if (socket && connected) {

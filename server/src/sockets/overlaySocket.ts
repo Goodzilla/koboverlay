@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { alertQueueManager, AlertPayload } from '../services/alertQueueService';
+import { prisma } from '../prisma';
 
 export function setupOverlaySockets(io: Server) {
   io.on('connection', (socket: Socket) => {
@@ -12,6 +13,32 @@ export function setupOverlaySockets(io: Server) {
       console.log(`🎯 Socket ${socket.id} joined room ${room}`);
       
       socket.emit('joined-room', { room, success: true });
+    });
+
+    // Save studio state (all widgets, positions, configs) and broadcast to overlay room
+    socket.on('save-studio-state', async (data: { token: string; widgets: any[] }) => {
+      const room = `overlay:${data.token}`;
+      io.to(room).emit('studio-state-updated', data.widgets);
+
+      if (data.token) {
+        try {
+          const user = await prisma.user.findUnique({ where: { overlayToken: data.token } });
+          if (user) {
+            await prisma.overlayConfig.upsert({
+              where: { userId: user.id },
+              create: {
+                userId: user.id,
+                layoutConfig: JSON.stringify(data.widgets),
+              },
+              update: {
+                layoutConfig: JSON.stringify(data.widgets),
+              },
+            });
+          }
+        } catch (e) {
+          console.error('Failed to persist studio state from socket:', e);
+        }
+      }
     });
 
     // Streamer triggers a test or live alert from Dashboard
@@ -54,3 +81,4 @@ export function setupOverlaySockets(io: Server) {
     });
   });
 }
+

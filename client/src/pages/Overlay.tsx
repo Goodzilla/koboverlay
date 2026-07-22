@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { createOverlaySocket } from '../utils/socket';
+import { createOverlaySocket, getServerUrl } from '../utils/socket';
+
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
 import { CustomImageWidget } from '../components/CustomImageWidget';
@@ -94,13 +95,15 @@ export const Overlay: React.FC = () => {
     const activeToken = urlToken && urlToken !== 'overlay' ? urlToken : token;
     setToken(activeToken);
 
-    const saved = localStorage.getItem(`koboverlay_studio_${activeToken}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.widgets) setWidgets(parsed.widgets);
-      } catch (err) {}
-    }
+    // Fetch initial overlay widgets state from cloud database
+    fetch(`${getServerUrl()}/api/overlay/info/${activeToken}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.widgets) && data.widgets.length > 0) {
+          setWidgets(data.widgets);
+        }
+      })
+      .catch((err) => console.error('Failed to fetch overlay widgets from server:', err));
 
     const socket = createOverlaySocket(activeToken);
 
@@ -113,6 +116,14 @@ export const Overlay: React.FC = () => {
     socket.on('new-alert', (alert: AlertData) => {
       console.log('🔔 New Overlay Alert Received:', alert);
       setAlertQueue((prev) => [...prev, alert]);
+    });
+
+    // Listen for real-time widget state updates from Studio Dashboard
+    socket.on('studio-state-updated', (newWidgets: WidgetInstance[]) => {
+      if (Array.isArray(newWidgets) && newWidgets.length > 0) {
+        console.log('📍 Studio State Updated in Real-Time:', newWidgets);
+        setWidgets(newWidgets);
+      }
     });
 
     // Listen for real-time widget layout & config updates from Studio Dashboard!
@@ -138,6 +149,7 @@ export const Overlay: React.FC = () => {
       document.body.classList.remove('overlay-mode');
       socket.disconnect();
     };
+
   }, []);
 
   // Alert Queue Engine

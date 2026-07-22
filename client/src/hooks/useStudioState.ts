@@ -1,14 +1,66 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Socket } from 'socket.io-client';
 import { WidgetInstance } from '../components/LayerTree';
 import { WidgetLayout } from '../components/DraggableWidget';
 import { DEFAULT_STUDIO_STATE } from '../constants/studio';
 import { WIDGET_DEFAULT_DIMENSIONS } from '../constants/widgets';
 import { centerWidgetInCanvas, scaleWidgetConfig } from '../utils/layoutMath';
 import { useHistory } from '../utils/useHistory';
+import { getServerUrl } from '../utils/socket';
 
-export function useStudioState() {
+export function useStudioState(token?: string, socket?: Socket | null) {
   const { state, set: setStudioState, undo, redo, canUndo, canRedo } = useHistory(DEFAULT_STUDIO_STATE);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>('subGoal_default');
+  const isHydratedRef = useRef(false);
+
+  // Fetch initial studio widgets from cloud database on mount
+  useEffect(() => {
+    if (!token) return;
+
+    let isMounted = true;
+    const fetchCloudState = async () => {
+      try {
+        const response = await fetch(`${getServerUrl()}/api/overlay/info/${token}`);
+        const data = await response.json();
+        if (isMounted && data.success && Array.isArray(data.widgets) && data.widgets.length > 0) {
+          setStudioState({ widgets: data.widgets });
+        }
+      } catch (err) {
+        console.error('Failed to load studio state from cloud database:', err);
+      } finally {
+        if (isMounted) {
+          isHydratedRef.current = true;
+        }
+      }
+    };
+
+    fetchCloudState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token, setStudioState]);
+
+  // Debounced auto-save to cloud database on state change
+  useEffect(() => {
+    if (!token || !isHydratedRef.current) return;
+
+    const timer = setTimeout(() => {
+      fetch(`${getServerUrl()}/api/overlay/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, widgets: state.widgets }),
+      }).catch((err) => {
+        console.error('Failed to auto-save studio state to server:', err);
+      });
+
+      if (socket && socket.connected) {
+        socket.emit('save-studio-state', { token, widgets: state.widgets });
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [state.widgets, token, socket]);
 
   const handleAddWidget = useCallback((type: 'subGoal' | 'subAlert' | 'customImage') => {
     const dim = WIDGET_DEFAULT_DIMENSIONS[type] || { width: 360, height: 68 };
@@ -193,3 +245,4 @@ export function useStudioState() {
     handleResetAllLayouts,
   };
 }
+
