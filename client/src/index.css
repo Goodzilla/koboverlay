@@ -85,6 +85,30 @@ body.overlay-mode {
 }
 
 /* Pro Studio Button System */
+.reset-size-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  cursor: pointer !important;
+  transition: all 0.15s ease;
+}
+
+.reset-size-btn:hover {
+  background: rgba(255, 255, 255, 0.38) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  transform: scale(1.08);
+}
+
+.reset-size-btn:active {
+  transform: scale(0.95);
+}
+
 .studio-btn {
   display: inline-flex;
   align-items: center;

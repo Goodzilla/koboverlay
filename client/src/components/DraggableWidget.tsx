@@ -230,23 +230,12 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             </span>
 
             <button
+              className="reset-size-btn"
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={handleResetSize}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '20px',
-                height: '20px',
-                borderRadius: '4px',
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                color: '#ffffff',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
               title="Reset Widget Size to Default PX"
             >
-              <RotateCcw size={11} />
+              <RotateCcw size={13} />
             </button>
           </div>
         </div>
