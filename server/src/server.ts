@@ -20,6 +20,6 @@ const io = new Server(server, {
 setupOverlaySockets(io);
 
 server.listen(PORT, () => {
-  console.log(`🚀 StreamPulse Server listening on port ${PORT}`);
+  console.log(`🚀 KobOverlay Server listening on port ${PORT}`);
   console.log(`📡 Socket.io Engine Active`);
 });

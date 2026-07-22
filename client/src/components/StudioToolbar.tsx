@@ -52,7 +52,7 @@ export const StudioToolbar: React.FC<StudioToolbarProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Tv size={20} color="#6366f1" />
           <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.3px' }}>
-            StreamPulse <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6366f1' }}>Studio</span>
+            KobOverlay <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6366f1' }}>Studio</span>
           </span>
         </div>
 

@@ -44,20 +44,25 @@ body.overlay-mode {
   overflow: hidden;
 }
 
-/* Canvas Grid Pattern Background */
-.canvas-grid-bg {
+/* Outer Viewport Workspace */
+.canvas-viewport-bg {
+  background-color: #09090b;
+}
+
+/* Inner 1920x1080 Movable Canvas Workspace Area */
+.canvas-workspace-bg {
   background-color: #0c0c0e;
-  background-image: radial-gradient(#27272a 1px, transparent 1px);
-  background-size: 20px 20px;
+  border: 1px solid #27272a;
+  position: relative;
   transition: background 0.2s ease;
 }
 
-/* Visible Grid Lines when Grid Snap is ON */
+/* 20px Grid Lines Aligned Exactly to 1920x1080 Canvas Snap Points */
 .canvas-grid-lines {
   background-image: 
-    linear-gradient(to right, rgba(99, 102, 241, 0.15) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(99, 102, 241, 0.15) 1px, transparent 1px) !important;
-  background-size: 20px 20px !important;
+    linear-gradient(to right, rgba(99, 102, 241, 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.18) 1px, transparent 1px) !important;
+  background-size: calc(100% / 96) calc(100% / 54) !important;
 }
 
 /* Scrollbar Styling */

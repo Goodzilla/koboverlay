@@ -402,9 +402,9 @@ export const Dashboard: React.FC = () => {
           </div>
         </aside>
 
-        {/* Main Canvas Viewport (Scales Maximized to Screen Height) */}
+        {/* Main Canvas Viewport (Outer Area - Dark Background Only) */}
         <main
-          className={`canvas-grid-bg ${gridSnap ? 'canvas-grid-lines' : ''}`}
+          className="canvas-viewport-bg"
           style={{
             flex: 1,
             display: 'flex',
@@ -415,15 +415,13 @@ export const Dashboard: React.FC = () => {
             overflow: 'hidden',
           }}
         >
-          {/* Scaled 1920x1080 Work Area */}
+          {/* Scaled 1920x1080 Movable Work Area (Grid Lines apply ONLY here) */}
           <div
-            className={`canvas-grid-bg ${gridSnap ? 'canvas-grid-lines' : ''}`}
+            className={`canvas-workspace-bg ${gridSnap ? 'canvas-grid-lines' : ''}`}
             style={{
               width: '100%',
               maxHeight: '100%',
               aspectRatio: '16 / 9',
-              background: '#09090b',
-              border: '1px solid #27272a',
               borderRadius: '8px',
               position: 'relative',
               boxShadow: '0 20px 50px rgba(0,0,0,0.8)',

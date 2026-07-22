@@ -11,7 +11,7 @@ export function createApp() {
 
   // Health check endpoint
   app.get('/health', (req, res) => {
-    res.json({ status: 'ok', service: 'StreamPulse Server', timestamp: new Date() });
+    res.json({ status: 'ok', service: 'KobOverlay Server', timestamp: new Date() });
   });
 
   // REST API Routes

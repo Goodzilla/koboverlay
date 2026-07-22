@@ -57,7 +57,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
     return null;
   }
 
-  const snapToGrid = (val: number, gridSize = 10) => {
+  const snapToGrid = (val: number, gridSize = 20) => {
     return gridSnap ? Math.round(val / gridSize) * gridSize : val;
   };
 

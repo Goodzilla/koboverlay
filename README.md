@@ -1,6 +1,6 @@
-# 🚀 StreamPulse - Open-Source Streamer Overlay & Alert Platform
+# 🚀 KobOverlay - Open-Source Streamer Overlay & Studio Platform
 
-StreamPulse is a lightweight, high-performance, real-time overlay platform for live streamers (Twitch / YouTube / Kick). It delivers customizable, glassmorphic OBS Studio browser overlays including **Subscriber Alerts**, **Resub Badges**, **Sub Goal Counters**, and an integrated **Test Event Simulator**.
+KobOverlay is a lightweight, high-performance, real-time overlay studio for live streamers (Twitch / YouTube / Kick). It delivers customizable, minimalist OBS Studio browser overlays including **Subscriber Alerts**, **Resub Badges**, **Sub Goal Counters**, and an integrated **Figma/OBS-style Studio Editor** with `Ctrl+Z` Undo/Redo history, Layer Tree management, 20px Grid Snapping, and built-in event simulation.
 
 Designed for easy open-source self-hosting and low-cost deployment ($0–$5/mo on Render, Railway, Fly.io, or VPS).
 
@@ -9,18 +9,19 @@ Designed for easy open-source self-hosting and low-cost deployment ($0–$5/mo o
 ## ✨ Features
 
 - 🎭 **OBS Studio Browser Source Overlay**: Transparent, ultra-low latency real-time overlays (`/overlay/:overlayToken`).
-- 🔔 **Dynamic Sub Alerts**: Animated entrance/exit alert banners with customizable colors, duration, audio sound effects, and tier badges.
-- 🎯 **Sub Goal Counter Widget**: Smoothly animated progress bar for tracking subscriber goals live on stream.
-- ⚙️ **Streamer Dashboard**: Easy-to-use control panel to customize alert visuals, copy secret OBS browser source URLs, and manage stream settings.
+- 🎨 **Pro Studio Canvas Editor**: Full-screen scaled 1920x1080 canvas workspace with 20px grid snapping and 60fps drag/resize engine.
+- ↩️ **Undo / Redo History Engine**: Full history stack supporting `Ctrl + Z` and `Ctrl + Shift + Z` hotkeys.
+- 📑 **Sidebar Layer Tree**: Select, toggle visibility, duplicate, and delete canvas elements.
+- 🔔 **Dynamic Sub Alerts**: Minimalist animated alert banners with customizable colors, duration, audio sound effects, and tier badges.
+- 🎯 **Sub Goal Counter Widget**: Smooth progress bar for tracking subscriber goals live on stream.
 - 🧪 **Built-in Event Simulator**: Test your sub alerts, resubs, and goal increments offline without needing a live stream subscriber!
-- ⚡ **Alert Queue Engine**: Prevents alert overlap by sequencing multiple events smoothly.
 - 🐳 **Docker & PaaS Ready**: One-click deployment options for Render, Railway, Fly.io, or any $4/mo VPS.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React (Vite), TypeScript, Lucide Icons, Canvas-Confetti, Vanilla CSS Keyframe Animations.
+- **Frontend**: React (Vite), TypeScript, Lucide Icons, Canvas-Confetti, Inter & JetBrains Mono Fonts.
 - **Backend**: Node.js, Express, Socket.io (WebSockets), TypeScript, Zod.
 - **Database**: Prisma ORM with SQLite (zero setup) & PostgreSQL support.
 - **Testing**: Vitest for unit & component tests.
@@ -36,8 +37,8 @@ Designed for easy open-source self-hosting and low-cost deployment ($0–$5/mo o
 ### 1. Clone & Install Dependencies
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/streampulse.git
-cd streampulse
+git clone https://github.com/your-username/koboverlay.git
+cd koboverlay
 
 # Install Server dependencies
 cd server
@@ -53,7 +54,6 @@ npm install
 # In /server
 cd server
 npx prisma db push
-npx prisma db seed # (optional test data)
 ```
 
 ### 3. Run Development Servers
@@ -62,32 +62,12 @@ npx prisma db seed # (optional test data)
 cd server
 npm run dev
 
-# Terminal 2: Run Frontend Dashboard & Overlay Client (port 5173)
+# Terminal 2: Run Frontend Studio Editor Client (port 5173)
 cd client
 npm run dev
 ```
 
-Open your browser at `http://localhost:5173` to access the Streamer Dashboard!
-
----
-
-## 🎬 How to Use in OBS Studio
-
-1. Open the **Streamer Dashboard** at `http://localhost:5173`.
-2. Copy your unique **OBS Browser Source URL** (e.g., `http://localhost:5173/overlay/demo-streamer-token`).
-3. Open **OBS Studio** -> Add Source -> **Browser Source**.
-4. Set URL to the copied overlay link.
-5. Set Width: `1920`, Height: `1080`.
-6. Check **"Shutdown source when not visible"** (optional).
-7. In the Dashboard, click **"Test Tier 1 Sub Alert"** to see it trigger live in OBS Studio!
-
----
-
-## 📄 Documentation & Guides
-
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Deep-dive technical architecture, AI context, and event lifecycle.
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - Open-source contribution guidelines & testing workflows.
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Deploying to Render, Railway, Fly.io, or Docker.
+Open your browser at `http://localhost:5173` to access the **KobOverlay Studio**!
 
 ---
 
