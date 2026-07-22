@@ -2,34 +2,51 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createOverlaySocket } from '../utils/socket';
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
+import { CustomImageWidget } from '../components/CustomImageWidget';
 import { DraggableWidget, WidgetLayout } from '../components/DraggableWidget';
+import { WidgetInstance } from '../components/LayerTree';
 
-interface LayoutState {
-  subGoal: WidgetLayout;
-  subAlert: WidgetLayout;
-}
-
-const DEFAULT_LAYOUT: LayoutState = {
-  subGoal: { x: 1300, y: 40, width: 360, height: 68 },
-  subAlert: { x: 700, y: 380, width: 480, height: 80 },
-};
+const DEFAULT_WIDGETS: WidgetInstance[] = [
+  {
+    id: 'subGoal_default',
+    type: 'subGoal',
+    label: 'Sub Goal Bar',
+    layout: { x: 1300, y: 40, width: 360, height: 68, visible: true },
+    config: {
+      title: 'Monthly Sub Goal',
+      currentSubs: 14,
+      targetSubs: 50,
+      primaryColor: '#6366f1',
+    },
+  },
+  {
+    id: 'subAlert_default',
+    type: 'subAlert',
+    label: 'Sub Alert Popup',
+    layout: { x: 700, y: 380, width: 480, height: 80, visible: true },
+    config: {
+      title: 'Sub Alert Popup',
+      primaryColor: '#38bdf8',
+      alertDuration: 5000,
+    },
+  },
+];
 
 export const Overlay: React.FC = () => {
   const [token, setToken] = useState<string>('demo-streamer-token');
   const [currentAlert, setCurrentAlert] = useState<AlertData | null>(null);
   const [alertQueue, setAlertQueue] = useState<AlertData[]>([]);
 
-  // Layout positions state in PX
-  const [layout, setLayout] = useState<LayoutState>(() => {
-    const saved = localStorage.getItem(`streampulse_layout_px_${token}`);
-    return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
-  });
-
-  // Sub Goal State
-  const [goalData, setGoalData] = useState({
-    title: 'Monthly Sub Goal',
-    currentSubs: 14,
-    targetSubs: 50,
+  // Widget instances state
+  const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+    const saved = localStorage.getItem(`koboverlay_studio_${token}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.widgets) return parsed.widgets;
+      } catch (err) {}
+    }
+    return DEFAULT_WIDGETS;
   });
 
   const isProcessingRef = useRef(false);
@@ -44,11 +61,11 @@ export const Overlay: React.FC = () => {
     const activeToken = urlToken && urlToken !== 'overlay' ? urlToken : token;
     setToken(activeToken);
 
-    // Read saved layout for this token
-    const saved = localStorage.getItem(`streampulse_layout_px_${activeToken}`);
+    const saved = localStorage.getItem(`koboverlay_studio_${activeToken}`);
     if (saved) {
       try {
-        setLayout(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (parsed.widgets) setWidgets(parsed.widgets);
       } catch (err) {}
     }
 
@@ -66,16 +83,12 @@ export const Overlay: React.FC = () => {
       setAlertQueue((prev) => [...prev, alert]);
     });
 
-    // Listen for Sub Goal updates
-    socket.on('sub-goal-updated', (data: { title: string; currentSubs: number; targetSubs: number }) => {
-      setGoalData(data);
-    });
-
-    // Listen for real-time Layout position/size updates from Dashboard drag & drop!
-    socket.on('layout-updated', (newLayout: LayoutState) => {
-      console.log('📍 Real-time PX Layout Updated:', newLayout);
-      setLayout(newLayout);
-      localStorage.setItem(`streampulse_layout_px_${activeToken}`, JSON.stringify(newLayout));
+    // Listen for real-time widget layout & config updates from Studio Dashboard!
+    socket.on('layout-updated', (data: { widgets: WidgetInstance[] }) => {
+      if (data?.widgets) {
+        console.log('📍 Real-time Widgets Updated:', data.widgets);
+        setWidgets(data.widgets);
+      }
     });
 
     return () => {
@@ -130,36 +143,51 @@ export const Overlay: React.FC = () => {
         background: 'transparent',
       }}
     >
-      {/* Sub Goal Bar Positioned & Resized dynamically in PX */}
-      <DraggableWidget
-        id="subGoal"
-        label="Sub Goal"
-        layout={layout.subGoal}
-        defaultWidth={360}
-        defaultHeight={68}
-        isEditable={false}
-        onLayoutChange={() => {}}
-      >
-        <SubGoalWidget
-          title={goalData.title}
-          currentSubs={goalData.currentSubs}
-          targetSubs={goalData.targetSubs}
-          primaryColor="#7c3aed"
-        />
-      </DraggableWidget>
+      {/* Dynamic Widget Renderer for OBS Browser Source */}
+      {widgets.map((widget) => {
+        if (widget.layout.visible === false) return null;
 
-      {/* Sub Alert Popup Positioned & Resized dynamically in PX */}
-      <DraggableWidget
-        id="subAlert"
-        label="Sub Alert"
-        layout={layout.subAlert}
-        defaultWidth={480}
-        defaultHeight={80}
-        isEditable={false}
-        onLayoutChange={() => {}}
-      >
-        <SubAlertWidget alert={currentAlert} onAnimationComplete={handleAlertComplete} />
-      </DraggableWidget>
+        let defaultW = 360;
+        let defaultH = 68;
+
+        if (widget.type === 'subAlert') {
+          defaultW = 480;
+          defaultH = 80;
+        } else if (widget.type === 'customImage') {
+          defaultW = 240;
+          defaultH = 120;
+        }
+
+        return (
+          <DraggableWidget
+            key={widget.id}
+            id={widget.id}
+            label={widget.label}
+            layout={widget.layout}
+            defaultWidth={defaultW}
+            defaultHeight={defaultH}
+            isEditable={false}
+            onLayoutChange={() => {}}
+          >
+            {widget.type === 'subGoal' && (
+              <SubGoalWidget
+                title={widget.config.title || 'Sub Goal'}
+                currentSubs={widget.config.currentSubs || 0}
+                targetSubs={widget.config.targetSubs || 50}
+                primaryColor={widget.config.primaryColor || '#6366f1'}
+              />
+            )}
+
+            {widget.type === 'subAlert' && (
+              <SubAlertWidget alert={currentAlert} onAnimationComplete={handleAlertComplete} />
+            )}
+
+            {widget.type === 'customImage' && (
+              <CustomImageWidget imageUrl={widget.config.imageUrl} altText={widget.config.title} />
+            )}
+          </DraggableWidget>
+        );
+      })}
     </div>
   );
 };

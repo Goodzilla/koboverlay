@@ -3,9 +3,11 @@ import { Socket } from 'socket.io-client';
 import { createOverlaySocket } from '../utils/socket';
 import { useHistory } from '../utils/useHistory';
 import { StudioToolbar } from '../components/StudioToolbar';
-import { LayerTree, LayerItem } from '../components/LayerTree';
+import { LayerTree, WidgetInstance } from '../components/LayerTree';
+import { AddWidgetModal, WidgetType } from '../components/AddWidgetModal';
 import { SubAlertWidget, AlertData } from '../components/SubAlertWidget';
 import { SubGoalWidget } from '../components/SubGoalWidget';
+import { CustomImageWidget } from '../components/CustomImageWidget';
 import { DraggableWidget, WidgetLayout } from '../components/DraggableWidget';
 import {
   Layers,
@@ -14,33 +16,46 @@ import {
   Zap,
   Sparkles,
   Gift,
-  Tv,
   RotateCcw,
-  Check,
+  Plus,
 } from 'lucide-react';
 
 export interface StudioState {
   primaryColor: string;
   alertDuration: number;
-  goalTitle: string;
-  currentSubs: number;
-  targetSubs: number;
-  layouts: {
-    subGoal: WidgetLayout;
-    subAlert: WidgetLayout;
-  };
+  widgets: WidgetInstance[];
 }
+
+const DEFAULT_WIDGETS: WidgetInstance[] = [
+  {
+    id: 'subGoal_default',
+    type: 'subGoal',
+    label: 'Sub Goal Bar',
+    layout: { x: 1300, y: 40, width: 360, height: 68, visible: true },
+    config: {
+      title: 'Monthly Sub Goal',
+      currentSubs: 14,
+      targetSubs: 50,
+      primaryColor: '#6366f1',
+    },
+  },
+  {
+    id: 'subAlert_default',
+    type: 'subAlert',
+    label: 'Sub Alert Popup',
+    layout: { x: 700, y: 380, width: 480, height: 80, visible: true },
+    config: {
+      title: 'Sub Alert Popup',
+      primaryColor: '#38bdf8',
+      alertDuration: 5000,
+    },
+  },
+];
 
 const DEFAULT_STUDIO_STATE: StudioState = {
   primaryColor: '#6366f1',
   alertDuration: 5000,
-  goalTitle: 'Monthly Sub Goal',
-  currentSubs: 14,
-  targetSubs: 50,
-  layouts: {
-    subGoal: { x: 1300, y: 40, width: 360, height: 68, visible: true },
-    subAlert: { x: 700, y: 380, width: 480, height: 80, visible: true },
-  },
+  widgets: DEFAULT_WIDGETS,
 };
 
 export const Dashboard: React.FC = () => {
@@ -48,19 +63,19 @@ export const Dashboard: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 
-  // Active Sidebar Tab: 'layers' | 'properties' | 'simulator'
-  const [activeTab, setActiveTab] = useState<'layers' | 'properties' | 'simulator'>('layers');
-  const [selectedLayerId, setSelectedLayerId] = useState<'subGoal' | 'subAlert' | null>('subGoal');
+  // Studio UI Controls
+  const [activeTab, setActiveTab] = useState<'layers' | 'simulator'>('layers');
+  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>('subGoal_default');
   const [gridSnap, setGridSnap] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // History Stack Engine (Ctrl+Z and Ctrl+Shift+Z)
   const getInitialState = (): StudioState => {
-    const saved = localStorage.getItem(`streampulse_studio_${token}`);
+    const saved = localStorage.getItem(`koboverlay_studio_${token}`);
     return saved ? JSON.parse(saved) : DEFAULT_STUDIO_STATE;
   };
 
   const history = useHistory<StudioState>(getInitialState());
-
   const { state, set: setStudioState, undo, redo, canUndo, canRedo, historyLength } = history;
 
   // Active Preview Alert
@@ -92,45 +107,146 @@ export const Dashboard: React.FC = () => {
     };
   }, [token]);
 
-  // Sync state changes with localStorage & WebSockets
+  // Sync state with localStorage & WebSockets
   useEffect(() => {
-    localStorage.setItem(`streampulse_studio_${token}`, JSON.stringify(state));
+    localStorage.setItem(`koboverlay_studio_${token}`, JSON.stringify(state));
 
     if (socket && connected) {
-      socket.emit('update-layout', { token, layout: state.layouts });
+      socket.emit('update-layout', { token, widgets: state.widgets });
     }
   }, [state, socket, connected, token]);
 
-  // Layout position & size update handler
-  const handleLayoutChange = (widgetId: 'subGoal' | 'subAlert', newLayout: WidgetLayout) => {
+  // --- WIDGET MANAGEMENT HANDLERS ---
+  const handleAddWidget = (type: WidgetType) => {
+    const newId = `${type}_${Math.random().toString(36).substring(2, 7)}`;
+    let defaultWidth = 360;
+    let defaultHeight = 68;
+    let defaultLabel = 'Sub Goal Bar';
+
+    if (type === 'subAlert') {
+      defaultWidth = 480;
+      defaultHeight = 80;
+      defaultLabel = 'Sub Alert Popup';
+    } else if (type === 'customImage') {
+      defaultWidth = 240;
+      defaultHeight = 120;
+      defaultLabel = 'Custom Logo / Image';
+    }
+
+    const newWidget: WidgetInstance = {
+      id: newId,
+      type,
+      label: defaultLabel,
+      layout: { x: 800, y: 300, width: defaultWidth, height: defaultHeight, visible: true },
+      config: {
+        title: defaultLabel,
+        primaryColor: type === 'subAlert' ? '#38bdf8' : '#6366f1',
+        imageUrl: type === 'customImage' ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80' : undefined,
+        currentSubs: type === 'subGoal' ? 14 : undefined,
+        targetSubs: type === 'subGoal' ? 50 : undefined,
+      },
+    };
+
     setStudioState((prev) => ({
       ...prev,
-      layouts: {
-        ...prev.layouts,
-        [widgetId]: newLayout,
+      widgets: [...prev.widgets, newWidget],
+    }));
+
+    setSelectedWidgetId(newId);
+  };
+
+  const handleDuplicateWidget = (id: string) => {
+    const target = state.widgets.find((w) => w.id === id);
+    if (!target) return;
+
+    const dupId = `${target.type}_${Math.random().toString(36).substring(2, 7)}`;
+    const duplicate: WidgetInstance = {
+      ...target,
+      id: dupId,
+      label: `${target.label} (Copy)`,
+      layout: {
+        ...target.layout,
+        x: Math.min(1800, target.layout.x + 30),
+        y: Math.min(1000, target.layout.y + 30),
       },
+    };
+
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: [...prev.widgets, duplicate],
+    }));
+
+    setSelectedWidgetId(dupId);
+  };
+
+  const handleDeleteWidget = (id: string) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.filter((w) => w.id !== id),
+    }));
+
+    if (selectedWidgetId === id) {
+      setSelectedWidgetId(null);
+    }
+  };
+
+  const handleToggleVisibility = (id: string) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => {
+        if (w.id !== id) return w;
+        return {
+          ...w,
+          layout: {
+            ...w.layout,
+            visible: w.layout.visible === false ? true : false,
+          },
+        };
+      }),
     }));
   };
 
-  // Toggle Layer Visibility
-  const handleToggleVisibility = (widgetId: 'subGoal' | 'subAlert') => {
-    setStudioState((prev) => {
-      const current = prev.layouts[widgetId];
-      return {
-        ...prev,
-        layouts: {
-          ...prev.layouts,
-          [widgetId]: {
-            ...current,
-            visible: current.visible === false ? true : false,
-          },
-        },
-      };
-    });
+  const handleLayoutChange = (id: string, newLayout: WidgetLayout) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => (w.id === id ? { ...w, layout: newLayout } : w)),
+    }));
+  };
+
+  const handleResetWidgetSize = (id: string) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => {
+        if (w.id !== id) return w;
+        let defW = 360;
+        let defH = 68;
+        if (w.type === 'subAlert') { defW = 480; defH = 80; }
+        else if (w.type === 'customImage') { defW = 240; defH = 120; }
+        return {
+          ...w,
+          layout: { ...w.layout, width: defW, height: defH },
+        };
+      }),
+    }));
+  };
+
+  const handleUpdateWidgetConfig = (id: string, newConfig: Partial<WidgetInstance['config']>) => {
+    setStudioState((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => {
+        if (w.id !== id) return w;
+        return {
+          ...w,
+          label: newConfig.title || w.label,
+          config: { ...w.config, ...newConfig },
+        };
+      }),
+    }));
   };
 
   const handleResetAllLayouts = () => {
     setStudioState(DEFAULT_STUDIO_STATE);
+    setSelectedWidgetId('subGoal_default');
   };
 
   // Trigger Simulated Sub Alert
@@ -159,25 +275,6 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const handleIncrementSubGoal = () => {
-    const newCount = state.currentSubs + 1;
-    setStudioState((prev) => ({ ...prev, currentSubs: newCount }));
-
-    if (socket && connected) {
-      socket.emit('update-sub-goal', {
-        token,
-        title: state.goalTitle,
-        currentSubs: newCount,
-        targetSubs: state.targetSubs,
-      });
-    }
-  };
-
-  const layers: LayerItem[] = [
-    { id: 'subGoal', label: 'Sub Goal Bar', type: 'goal', layout: state.layouts.subGoal },
-    { id: 'subAlert', label: 'Sub Alert Popup', type: 'alert', layout: state.layouts.subAlert },
-  ];
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* Top Toolbar */}
@@ -198,7 +295,7 @@ export const Dashboard: React.FC = () => {
         {/* Left Sidebar Panel */}
         <aside
           style={{
-            width: '320px',
+            width: '340px',
             background: '#121215',
             borderRight: '1px solid #27272a',
             display: 'flex',
@@ -227,28 +324,7 @@ export const Dashboard: React.FC = () => {
                 gap: '6px',
               }}
             >
-              <Layers size={14} /> Layers
-            </button>
-
-            <button
-              onClick={() => setActiveTab('properties')}
-              style={{
-                flex: 1,
-                padding: '10px 0',
-                background: activeTab === 'properties' ? '#121215' : 'transparent',
-                border: 'none',
-                borderBottom: activeTab === 'properties' ? '2px solid #6366f1' : 'none',
-                color: activeTab === 'properties' ? '#ffffff' : '#71717a',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-              }}
-            >
-              <Sliders size={14} /> Properties
+              <Layers size={14} /> Layers & Properties
             </button>
 
             <button
@@ -273,106 +349,30 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Sidebar Tab Content */}
+          {/* Sidebar Content Area */}
           <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
-            {/* Tab 1: Layer Tree */}
             {activeTab === 'layers' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <LayerTree
-                  layers={layers}
-                  selectedLayerId={selectedLayerId}
-                  onSelectLayer={(id) => setSelectedLayerId(id)}
+                  widgets={state.widgets}
+                  selectedWidgetId={selectedWidgetId}
+                  onSelectWidget={(id) => setSelectedWidgetId(id)}
                   onToggleVisibility={handleToggleVisibility}
+                  onDuplicateWidget={handleDuplicateWidget}
+                  onDeleteWidget={handleDeleteWidget}
+                  onResetWidgetSize={handleResetWidgetSize}
+                  onUpdateWidgetConfig={handleUpdateWidgetConfig}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
                 />
 
                 <div style={{ borderTop: '1px solid #27272a', paddingTop: '16px' }}>
                   <button className="studio-btn" onClick={handleResetAllLayouts} style={{ width: '100%' }}>
-                    <RotateCcw size={14} /> Reset Layout Positions
+                    <RotateCcw size={14} /> Reset Studio Layout
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Tab 2: Properties Inspector */}
-            {activeTab === 'properties' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a1a1aa' }}>Visual Inspector</div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
-                    Accent Highlight Color
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input
-                      type="color"
-                      value={state.primaryColor}
-                      onChange={(e) => setStudioState((prev) => ({ ...prev, primaryColor: e.target.value }))}
-                      style={{ width: '36px', height: '32px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
-                    />
-                    <input
-                      type="text"
-                      value={state.primaryColor}
-                      onChange={(e) => setStudioState((prev) => ({ ...prev, primaryColor: e.target.value }))}
-                      className="studio-input"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
-                    Sub Goal Title
-                  </label>
-                  <input
-                    type="text"
-                    value={state.goalTitle}
-                    onChange={(e) => setStudioState((prev) => ({ ...prev, goalTitle: e.target.value }))}
-                    className="studio-input"
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
-                      Current Subs
-                    </label>
-                    <input
-                      type="number"
-                      value={state.currentSubs}
-                      onChange={(e) => setStudioState((prev) => ({ ...prev, currentSubs: Number(e.target.value) }))}
-                      className="studio-input"
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
-                      Target Subs
-                    </label>
-                    <input
-                      type="number"
-                      value={state.targetSubs}
-                      onChange={(e) => setStudioState((prev) => ({ ...prev, targetSubs: Number(e.target.value) }))}
-                      className="studio-input"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', color: '#d4d4d8' }}>
-                    Alert Duration ({state.alertDuration / 1000}s)
-                  </label>
-                  <input
-                    type="range"
-                    min={2000}
-                    max={10000}
-                    step={500}
-                    value={state.alertDuration}
-                    onChange={(e) => setStudioState((prev) => ({ ...prev, alertDuration: Number(e.target.value) }))}
-                    style={{ width: '100%', accentColor: '#6366f1' }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Tab 3: Test Event Simulator */}
             {activeTab === 'simulator' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#a1a1aa' }}>Test Event Triggers</div>
@@ -391,18 +391,12 @@ export const Dashboard: React.FC = () => {
                     <Gift size={14} /> Test Gift Sub
                   </button>
                 </div>
-
-                <div style={{ borderTop: '1px solid #27272a', paddingTop: '12px' }}>
-                  <button className="studio-btn studio-btn-active" onClick={handleIncrementSubGoal} style={{ width: '100%' }}>
-                    +1 Sub Goal ({state.currentSubs}/{state.targetSubs})
-                  </button>
-                </div>
               </div>
             )}
           </div>
         </aside>
 
-        {/* Main Canvas Viewport (Outer Area - Dark Background Only) */}
+        {/* Main Canvas Viewport Area */}
         <main
           className="canvas-viewport-bg"
           style={{
@@ -415,7 +409,7 @@ export const Dashboard: React.FC = () => {
             overflow: 'hidden',
           }}
         >
-          {/* Scaled 1920x1080 Movable Work Area (Grid Lines apply ONLY here) */}
+          {/* Scaled 1920x1080 Movable Work Area */}
           <div
             className={`canvas-workspace-bg ${gridSnap ? 'canvas-grid-lines' : ''}`}
             style={{
@@ -428,44 +422,52 @@ export const Dashboard: React.FC = () => {
               overflow: 'hidden',
             }}
           >
-            {/* Sub Goal Draggable Widget */}
-            <DraggableWidget
-              id="subGoal"
-              label="Sub Goal Bar"
-              layout={state.layouts.subGoal}
-              defaultWidth={360}
-              defaultHeight={68}
-              isEditable={true}
-              isSelected={selectedLayerId === 'subGoal'}
-              gridSnap={gridSnap}
-              onSelect={() => setSelectedLayerId('subGoal')}
-              onLayoutChange={(newLayout) => handleLayoutChange('subGoal', newLayout)}
-            >
-              <SubGoalWidget
-                title={state.goalTitle}
-                currentSubs={state.currentSubs}
-                targetSubs={state.targetSubs}
-                primaryColor={state.primaryColor}
-              />
-            </DraggableWidget>
+            {/* Dynamic Widget Renderer */}
+            {state.widgets.map((widget) => {
+              let defaultW = 360;
+              let defaultH = 68;
 
-            {/* Sub Alert Draggable Widget */}
-            <DraggableWidget
-              id="subAlert"
-              label="Sub Alert Popup"
-              layout={state.layouts.subAlert}
-              defaultWidth={480}
-              defaultHeight={80}
-              isEditable={true}
-              isSelected={selectedLayerId === 'subAlert'}
-              gridSnap={gridSnap}
-              onSelect={() => setSelectedLayerId('subAlert')}
-              onLayoutChange={(newLayout) => handleLayoutChange('subAlert', newLayout)}
-            >
-              <SubAlertWidget alert={previewAlert} />
-            </DraggableWidget>
+              if (widget.type === 'subAlert') {
+                defaultW = 480;
+                defaultH = 80;
+              } else if (widget.type === 'customImage') {
+                defaultW = 240;
+                defaultH = 120;
+              }
 
-            {/* Viewport Specs Footer Badge */}
+              return (
+                <DraggableWidget
+                  key={widget.id}
+                  id={widget.id}
+                  label={widget.label}
+                  layout={widget.layout}
+                  defaultWidth={defaultW}
+                  defaultHeight={defaultH}
+                  isEditable={true}
+                  isSelected={selectedWidgetId === widget.id}
+                  gridSnap={gridSnap}
+                  onSelect={() => setSelectedWidgetId(widget.id)}
+                  onLayoutChange={(newLayout) => handleLayoutChange(widget.id, newLayout)}
+                >
+                  {widget.type === 'subGoal' && (
+                    <SubGoalWidget
+                      title={widget.config.title || 'Sub Goal'}
+                      currentSubs={widget.config.currentSubs || 0}
+                      targetSubs={widget.config.targetSubs || 50}
+                      primaryColor={widget.config.primaryColor || '#6366f1'}
+                    />
+                  )}
+
+                  {widget.type === 'subAlert' && <SubAlertWidget alert={previewAlert} />}
+
+                  {widget.type === 'customImage' && (
+                    <CustomImageWidget imageUrl={widget.config.imageUrl} altText={widget.config.title} />
+                  )}
+                </DraggableWidget>
+              );
+            })}
+
+            {/* Viewport Specs Badge */}
             <div
               style={{
                 position: 'absolute',
@@ -483,6 +485,13 @@ export const Dashboard: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Add Widget Picker Modal */}
+      <AddWidgetModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddWidget={handleAddWidget}
+      />
     </div>
   );
 };
