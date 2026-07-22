@@ -3,7 +3,7 @@ import { WidgetInstance } from '../components/LayerTree';
 import { AlertData } from '../components/SubAlertWidget';
 import { matchAlertToWidget } from '../utils/alertMatcher';
 
-export function useAlertFeed(widgets: WidgetInstance[]) {
+export function useAlertFeed(widgets: WidgetInstance[], onEmitAlert?: (alert: AlertData) => void) {
   const [alertQueue, setAlertQueue] = useState<AlertData[]>([]);
   const [alertHistory, setAlertHistory] = useState<AlertData[]>([]);
 
@@ -44,7 +44,8 @@ export function useAlertFeed(widgets: WidgetInstance[]) {
     };
 
     setAlertQueue((prev) => [...prev, simAlert]);
-  }, [widgets]);
+    if (onEmitAlert) onEmitAlert(simAlert);
+  }, [widgets, onEmitAlert]);
 
   const handleAlertComplete = useCallback(() => {
     setAlertQueue((prev) => {
@@ -74,7 +75,8 @@ export function useAlertFeed(widgets: WidgetInstance[]) {
       id: `replay_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
     };
     setAlertQueue((prev) => [...prev, freshAlert]);
-  }, []);
+    if (onEmitAlert) onEmitAlert(freshAlert);
+  }, [onEmitAlert]);
 
   const handleClearHistory = useCallback(() => {
     setAlertHistory([]);

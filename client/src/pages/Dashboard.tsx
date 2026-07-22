@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 import { createOverlaySocket } from '../utils/socket';
 import { useStudioState } from '../hooks/useStudioState';
@@ -77,6 +77,15 @@ export const Dashboard: React.FC = () => {
     handleResetAllLayouts,
   } = useStudioState();
 
+  const handleEmitAlert = useCallback((alert: AlertData) => {
+    if (socket && connected) {
+      socket.emit('trigger-alert', {
+        token,
+        alert,
+      });
+    }
+  }, [socket, connected, token]);
+
   const {
     alertQueue,
     setAlertQueue,
@@ -87,7 +96,7 @@ export const Dashboard: React.FC = () => {
     handleClearQueue,
     handleReplayAlert,
     handleClearHistory,
-  } = useAlertFeed(state.widgets);
+  } = useAlertFeed(state.widgets, handleEmitAlert);
 
   // UI State
   const [activeTab, setActiveTab] = useState<'layers' | 'simulator'>('layers');
@@ -101,7 +110,10 @@ export const Dashboard: React.FC = () => {
     const sock = createOverlaySocket(token);
     setSocket(sock);
 
-    sock.on('connect', () => setConnected(true));
+    sock.on('connect', () => {
+      setConnected(true);
+      sock.emit('join-overlay', { token });
+    });
     sock.on('disconnect', () => setConnected(false));
 
     sock.on('new-alert', (alert: AlertData) => {
@@ -114,14 +126,22 @@ export const Dashboard: React.FC = () => {
     };
   }, [token, setAlertQueue]);
 
-  // Sync Studio State to Server
+  // Sync Studio State to Server & LocalStorage for OBS Source
   useEffect(() => {
     if (socket && connected) {
-      socket.emit('update-config', {
-        widgets: state.widgets,
+      socket.emit('join-overlay', { token });
+      socket.emit('update-layout', {
+        token,
+        layout: { widgets: state.widgets },
+      });
+      socket.emit('update-overlay-config', {
+        token,
+        config: { widgets: state.widgets },
       });
     }
-  }, [socket, connected, state.widgets]);
+    localStorage.setItem(`koboverlay_studio_${token}`, JSON.stringify({ widgets: state.widgets }));
+    localStorage.setItem('koboverlay_studio_v2', JSON.stringify({ widgets: state.widgets }));
+  }, [socket, connected, token, state.widgets]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden', background: '#09090b', color: '#ffffff' }}>
@@ -217,7 +237,6 @@ export const Dashboard: React.FC = () => {
                   onUpdateWidgetConfig={handleUpdateWidgetConfig}
                   onOpenAddModal={() => setIsAddModalOpen(true)}
                 />
-
               </div>
             )}
 

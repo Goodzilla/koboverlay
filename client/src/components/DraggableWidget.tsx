@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Move, Maximize2 } from 'lucide-react';
+import { Move, Scaling } from 'lucide-react';
 import { WidgetBadgeOverlay } from './widgets/WidgetBadgeOverlay';
 
 export interface WidgetLayout {
-  x: number;      // Position X in PX (0 to 1920)
-  y: number;      // Position Y in PX (0 to 1080)
-  width: number;  // Width in PX
-  height: number; // Height in PX
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   visible?: boolean;
   muted?: boolean;
 }
@@ -17,7 +17,7 @@ interface DraggableWidgetProps {
   layout: WidgetLayout;
   defaultWidth?: number;
   defaultHeight?: number;
-  isEditable: boolean;
+  isEditable?: boolean;
   isSelected?: boolean;
   gridSnap?: boolean;
   hasSound?: boolean;
@@ -31,9 +31,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   id,
   label,
   layout,
-  defaultWidth = 380,
-  defaultHeight = 100,
-  isEditable,
+  defaultWidth = 360,
+  defaultHeight = 68,
+  isEditable = false,
   isSelected = false,
   gridSnap = false,
   hasSound = false,
@@ -42,39 +42,35 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   onScaleChange,
   children,
 }) => {
+  const [currentLayout, setCurrentLayout] = useState<WidgetLayout>(() => ({
+    x: layout.x ?? 720,
+    y: layout.y ?? 40,
+    width: layout.width ?? defaultWidth,
+    height: layout.height ?? defaultHeight,
+    visible: layout.visible ?? true,
+    muted: layout.muted ?? false,
+  }));
+
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [currentLayout, setCurrentLayout] = useState<WidgetLayout>(layout);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
-  const currentLayoutRef = useRef<WidgetLayout>(layout);
   const startDragRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number } | null>(null);
   const startResizeRef = useRef<{ mouseX: number; mouseY: number; startW: number; startH: number } | null>(null);
+  const currentLayoutRef = useRef<WidgetLayout>(currentLayout);
 
-  // Synchronize layout prop changes only when not actively dragging or resizing
   useEffect(() => {
-    if (!isDragging && !isResizing) {
-      setCurrentLayout(layout);
-      currentLayoutRef.current = layout;
-    }
-  }, [layout, isDragging, isResizing]);
-
-  // Adjust container height to content natural height when children or properties update
-  useEffect(() => {
-    if (isResizing || isDragging || !innerContentRef.current) return;
-
-    const scrollH = innerContentRef.current.scrollHeight;
-    if (scrollH > 0 && scrollH !== currentLayoutRef.current.height) {
-      const updated = {
-        ...currentLayoutRef.current,
-        height: Math.ceil(scrollH),
-      };
-      setCurrentLayout(updated);
-      currentLayoutRef.current = updated;
-      onLayoutChange(updated);
-    }
-  }, [children, isResizing, isDragging, onLayoutChange]);
+    setCurrentLayout({
+      x: layout.x ?? 720,
+      y: layout.y ?? 40,
+      width: layout.width ?? defaultWidth,
+      height: layout.height ?? defaultHeight,
+      visible: layout.visible ?? true,
+      muted: layout.muted ?? false,
+    });
+    currentLayoutRef.current = layout;
+  }, [layout, defaultWidth, defaultHeight]);
 
   const snapValue = (val: number, step = 20) => {
     return Math.round(val / step) * step;
@@ -107,7 +103,6 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         rawY = snapValue(rawY, 20);
       }
 
-      // Allow free position movement without rigid boundary blocking
       const updated = {
         ...currentLayoutRef.current,
         x: rawX,
@@ -155,9 +150,8 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         rawH = snapValue(rawH, 20);
       }
 
-      // Allow free width & height expansion/shrinking without rigid canvas edge blocking
-      const minW = 60;
-      const minH = 20;
+      const minW = 180;
+      const minH = 44;
       const clampedW = Math.max(minW, rawW);
       const clampedH = Math.max(minH, rawH);
 
@@ -170,7 +164,6 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
       setCurrentLayout(updated);
       currentLayoutRef.current = updated;
 
-      // Scale font and media properties if callback provided
       const ratioW = clampedW / startResizeRef.current.startW;
       const ratioH = clampedH / startResizeRef.current.startH;
       const scaleRatio = (ratioW + ratioH) / 2;
@@ -202,6 +195,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         position: 'absolute',
         left: `${leftPercent}%`,
         top: `${topPercent}%`,
+        width: `${currentLayout.width}px`,
         cursor: isEditable ? (isDragging ? 'grabbing' : 'grab') : 'default',
         transition: isDragging || isResizing ? 'none' : 'all 0.12s ease',
         zIndex: isSelected || isDragging || isResizing ? 100 : 10,
@@ -213,10 +207,11 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
       {isEditable && (
         <div
           style={{
+            width: '100%',
+            boxSizing: 'border-box',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            flexWrap: 'wrap',
             gap: '6px',
             background: isDragging || isResizing ? '#06b6d4' : isSelected ? '#6366f1' : '#27272a',
             color: '#ffffff',
@@ -225,19 +220,20 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             fontSize: '0.7rem',
             fontWeight: 600,
             boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-            minWidth: '180px',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
           }}
         >
           {/* Left: Label */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Move size={12} />
-            <span>{label}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Move size={12} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
           </div>
 
           {/* Right: Coordinates */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.7rem', opacity: 0.95, fontFamily: 'var(--font-mono)' }}>
-              X:{currentLayout.x}px Y:{currentLayout.y}px ({currentLayout.width}×{currentLayout.height}px)
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            <span style={{ fontSize: '0.68rem', opacity: 0.95, fontFamily: 'var(--font-mono)' }}>
+              X:{currentLayout.x} Y:{currentLayout.y} ({currentLayout.width}×{currentLayout.height})
             </span>
           </div>
         </div>
@@ -246,7 +242,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
       {/* Embedded Content Container */}
       <div
         style={{
-          width: `${currentLayout.width}px`,
+          width: '100%',
           height: `${currentLayout.height}px`,
           outline: isEditable ? `1px ${isSelected || isDragging || isResizing ? 'solid #6366f1' : 'dashed #3f3f46'}` : 'none',
           borderRadius: isEditable ? '0 0 6px 6px' : '0',
@@ -254,7 +250,6 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
           position: 'relative',
           boxSizing: 'border-box',
           overflow: 'hidden',
-          // Subtle dimming when hidden or muted in edit mode
           opacity: isEditable && currentLayout.visible === false ? 0.35 : 1,
           transition: 'opacity 0.2s ease',
         }}
@@ -275,7 +270,7 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
         <WidgetBadgeOverlay isEditable={isEditable} layout={currentLayout} hasSound={hasSound} />
       </div>
 
-      {/* Studio Resize Corner Handle — must be outside the overflow:hidden container */}
+      {/* Studio Resize Corner Handle — anchored to exact bottom-right of the widget box */}
       {isEditable && (isSelected || isResizing) && (
         <div
           onMouseDown={handleResizeMouseDown}
@@ -288,16 +283,17 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
             borderRadius: '50%',
             background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
             border: '2px solid #ffffff',
-            cursor: 'se-resize',
+            boxShadow: '0 0 12px rgba(6, 182, 212, 0.8)',
+            cursor: 'nwse-resize',
+            zIndex: 120,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 10px rgba(6, 182, 212, 1)',
-            zIndex: 150,
+            color: '#ffffff',
           }}
-          title="Click and drag to resize width & height freely"
+          title="Drag to resize widget box"
         >
-          <Maximize2 size={10} color="#ffffff" style={{ transform: 'rotate(90deg)' }} />
+          <Scaling size={12} />
         </div>
       )}
     </div>

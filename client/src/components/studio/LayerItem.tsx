@@ -79,7 +79,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
         background: isSelected ? 'rgba(99, 102, 241, 0.08)' : '#18181b',
         border: `1px solid ${isSelected ? '#6366f1' : '#27272a'}`,
         overflow: 'hidden',
-        transition: 'all 0.15s ease',
+        transition: 'all 0.1s ease',
       }}
     >
       {/* Accordion Item Header */}
@@ -93,6 +93,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
           cursor: 'pointer',
           userSelect: 'none',
           color: isVisible ? '#ffffff' : '#71717a',
+          transition: 'background 0.1s ease',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
@@ -117,7 +118,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
               cursor: 'pointer',
               padding: '3px',
               display: 'flex',
-              transition: 'all 0.15s ease',
+              transition: 'all 0.1s ease',
             }}
             title={isVisible ? 'Hide widget on overlay' : 'Show widget on overlay'}
           >
@@ -139,7 +140,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
                 cursor: 'pointer',
                 padding: '3px',
                 display: 'flex',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.1s ease',
               }}
               title={isMuted ? 'Unmute widget sounds' : 'Mute widget sounds'}
             >
@@ -148,81 +149,83 @@ export const LayerItem: React.FC<LayerItemProps> = ({
           )}
 
           {/* Accordion Chevron Expander */}
-          <div style={{ color: '#71717a', display: 'flex', marginLeft: '2px' }}>
+          <div style={{ color: '#71717a', display: 'flex', marginLeft: '2px', transition: 'transform 0.1s ease' }}>
             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </div>
         </div>
       </div>
 
-      {/* Accordion Body */}
-      {isExpanded && (
-        <div
-          style={{
-            padding: '12px',
-            borderTop: '1px solid #27272a',
-            background: '#121215',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Action Bar */}
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
-              className="studio-btn"
-              onClick={() => onDuplicateWidget(widget.id)}
-              style={{ flex: 1, padding: '4px 6px', fontSize: '0.75rem' }}
-              title="Duplicate Widget Instance"
-            >
-              <Copy size={12} /> Duplicate
-            </button>
-            <button
-              className="studio-btn"
-              onClick={() => onCenterWidget(widget.id)}
-              style={{ flex: 1, padding: '4px 6px', fontSize: '0.75rem' }}
-              title="Bring Lost Widget Back to Center of Canvas"
-            >
-              <Crosshair size={12} color="#6366f1" /> Center
-            </button>
-            <button
-              className="studio-btn studio-btn-danger"
-              onClick={() => onDeleteWidget(widget.id)}
-              style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-              title="Delete Widget"
-            >
-              <Trash2 size={12} />
-            </button>
-          </div>
-
-          {/* Sub-Inspectors by Widget Type */}
-          {widget.type === 'subGoal' && (
-            <SubGoalInspector
-              widget={widget}
-              onUpdateWidgetConfig={onUpdateWidgetConfig}
-              onFileUpload={handleFileUpload}
-            />
-          )}
-
-          {widget.type === 'subAlert' && (
-            <SubAlertInspector
-              widget={widget}
-              onUpdateWidgetConfig={onUpdateWidgetConfig}
-              onToggleMute={onToggleMute}
-              onPlaySoundPreview={onPlaySoundPreview}
-              onFileUpload={handleFileUpload}
-            />
-          )}
-
-          {widget.type === 'customImage' && (
-            <CustomImageInspector
-              widget={widget}
-              onUpdateWidgetConfig={onUpdateWidgetConfig}
-              onFileUpload={handleFileUpload}
-            />
-          )}
+      {/* Accordion Body with 100ms Smooth Transition */}
+      <div
+        style={{
+          maxHeight: isExpanded ? '1500px' : '0px',
+          opacity: isExpanded ? 1 : 0,
+          padding: isExpanded ? '12px' : '0px 12px',
+          borderTop: isExpanded ? '1px solid #27272a' : '1px solid transparent',
+          background: '#121215',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
+          overflow: 'hidden',
+          transition: 'max-height 0.1s ease, opacity 0.1s ease, padding 0.1s ease, border-color 0.1s ease',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Action Bar */}
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            className="studio-btn"
+            onClick={() => onDuplicateWidget(widget.id)}
+            style={{ flex: 1, padding: '4px 6px', fontSize: '0.75rem' }}
+            title="Duplicate Widget Instance"
+          >
+            <Copy size={12} /> Duplicate
+          </button>
+          <button
+            className="studio-btn"
+            onClick={() => onCenterWidget(widget.id)}
+            style={{ flex: 1, padding: '4px 6px', fontSize: '0.75rem' }}
+            title="Bring Lost Widget Back to Center of Canvas"
+          >
+            <Crosshair size={12} color="#6366f1" /> Center
+          </button>
+          <button
+            className="studio-btn studio-btn-danger"
+            onClick={() => onDeleteWidget(widget.id)}
+            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+            title="Delete Widget"
+          >
+            <Trash2 size={12} />
+          </button>
         </div>
-      )}
+
+        {/* Sub-Inspectors by Widget Type */}
+        {widget.type === 'subGoal' && (
+          <SubGoalInspector
+            widget={widget}
+            onUpdateWidgetConfig={onUpdateWidgetConfig}
+            onFileUpload={handleFileUpload}
+          />
+        )}
+
+        {widget.type === 'subAlert' && (
+          <SubAlertInspector
+            widget={widget}
+            onUpdateWidgetConfig={onUpdateWidgetConfig}
+            onToggleMute={onToggleMute}
+            onPlaySoundPreview={onPlaySoundPreview}
+            onFileUpload={handleFileUpload}
+          />
+        )}
+
+        {widget.type === 'customImage' && (
+          <CustomImageInspector
+            widget={widget}
+            onUpdateWidgetConfig={onUpdateWidgetConfig}
+            onFileUpload={handleFileUpload}
+          />
+        )}
+      </div>
     </div>
   );
 };

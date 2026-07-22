@@ -64,8 +64,12 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(selectedWidgetId);
 
   const toggleAccordion = (id: string) => {
-    onSelectWidget(id);
-    setExpandedId((prev) => (prev === id ? null : id));
+    if (expandedId === id) {
+      setExpandedId(null);
+    } else {
+      onSelectWidget(id);
+      setExpandedId(id);
+    }
   };
 
   const handlePlaySoundPreview = (url?: string, volume = 80) => {
@@ -97,7 +101,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {widgets.map((widget) => {
           const isSelected = selectedWidgetId === widget.id;
-          const isExpanded = expandedId === widget.id || isSelected;
+          const isExpanded = expandedId === widget.id;
 
           return (
             <LayerItem
