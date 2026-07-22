@@ -177,7 +177,7 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* Action Bar (Duplicate, Reset Size, Delete) */}
+                  {/* Action Bar (Duplicate, Delete) */}
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
                       className="studio-btn"
@@ -189,19 +189,11 @@ export const LayerTree: React.FC<WidgetTreeProps> = ({
                     </button>
                     <button
                       className="studio-btn"
-                      onClick={() => onResetWidgetSize(widget.id)}
-                      style={{ flex: 1, padding: '4px 6px', fontSize: '0.75rem' }}
-                      title="Reset Size to Default PX"
-                    >
-                      <RotateCcw size={12} /> Reset Size
-                    </button>
-                    <button
-                      className="studio-btn"
                       onClick={() => onDeleteWidget(widget.id)}
                       style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
                       title="Delete Widget"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={12} /> Delete
                     </button>
                   </div>
 
